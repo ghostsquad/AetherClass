@@ -1,10 +1,8 @@
 $ErrorActionPrefence = "Stop"
 Set-StrictMode -Version Latest
 
-if((Get-Module PoshBox.Core -ListAvailable) -and -not (Get-Module PoshBox.Core)){
-    Import-Module PoshBox.Core -Global
-} else {
-    Throw (New-Object System.InvalidOperationException("Dependency PoshBox.Core Module not found."))
+if(-not (Get-Module PoshBox.Core)){
+    Import-Module ..\PoshBox.Core -Global
 }
 
 $here = Split-Path -Parent $MyInvocation.MyCommand.Path
