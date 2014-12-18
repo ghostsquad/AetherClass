@@ -22,11 +22,12 @@ function Guard-ObjectIsPSClass {
         $PSClass = [PSClassContainer]::ClassDefinitions[$PSClassName]
     } else {
         Guard-ArgumentNotNull 'PSClass' $PSClass
+        $PSClassName = $PSClass.__ClassName
     }
 
     $foundClassInTypeNames = $false
     foreach($typeName in $InputObject.psobject.TypeNames) {
-        if($typeName -eq $) {
+        if($typeName -eq $PSClassName) {
             $foundClassInTypeNames = $true
             break
         }
@@ -44,7 +45,7 @@ function Guard-ObjectIsPSClass {
         # compare member types
         # we could go further and compare parameters for method scripts and property getter/setter, but that seems like overkill
         # considering that the PSClass TypeName assertion prior to this
-        if ($objectMember -ne $null -and $objectMember.GetType() -ne $classMember.GetType())) {
+        if ($objectMember -ne $null -and $objectMember.GetType() -ne $classMember.GetType()) {
             throw (New-Object PSClassObjectDoesNotMatchException(
                 ('Member type mismatch. Class has member {0} which is {1}, where as the object has a member with the same name which is {2}' -f `
                     $memberName, `
