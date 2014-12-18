@@ -53,6 +53,7 @@ function New-PSClass {
 
             $PSNoteProperty = new-object management.automation.PSNoteProperty $Name,$Value
             $class.__Notes[$name] = @{PSNoteProperty=$PSNoteProperty;}
+            [Void]$class.__Members.Add($PSNoteProperty)
         }
     }
 
@@ -88,6 +89,7 @@ function New-PSClass {
 
             $PsScriptProperty = new-object management.automation.PsScriptProperty $Name,$Get,$Set
             $class.__Properties[$name] = @{PSScriptProperty=$PsScriptProperty;Override=$override}
+            [Void]$class.__Members.Add($PsScriptProperty)
         }
     }
 
@@ -122,6 +124,7 @@ function New-PSClass {
 
             $PSScriptMethod = new-object management.automation.PSScriptMethod $Name,$script
             $class.__Methods[$name] = @{PSScriptMethod=$PSScriptMethod;Override=$override}
+            [Void]$class.__Members.Add($PSScriptMethod)
         }
     }
     #endregion Class Definition Functions
@@ -133,6 +136,7 @@ function New-PSClass {
     Attach-PSNote $class __Notes @{}
     Attach-PSNote $class __Methods @{}
     Attach-PSNote $class __Properties @{}
+    Attach-PSNote $class __Members (New-Object System.Collections.Generic.List[System.Management.Automation.PSMemberInfo])
     Attach-PSNote $class __BaseClass $Inherit
     Attach-PSNote $class __ConstructorScript
 

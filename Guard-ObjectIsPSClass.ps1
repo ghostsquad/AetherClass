@@ -2,19 +2,26 @@
 # Ensures that the inputobject has AT LEAST all the members
 # defined in the PSClass
 function Guard-ObjectIsPSClass {
+    [cmdletbinding(DefaultParameterSetName='PSClass')]
     param (
+        [Parameter(Position=0,ParameterSetName='PSClass')]
+        [Parameter(Position=0,ParameterSetName='PSClassName')]
         [psobject]$InputObject,
+
+        [Parameter(Position=1,ParameterSetName='PSClass')]
         [psobject]$PSClass,
+
+        [Parameter(Position=1,ParameterSetName='PSClassName')]
         [string]$PSClassName
     )
 
     Guard-ArgumentNotNull 'InputObject' $InputObject
-    Guard-ArgumentValid 'PSClass/PSClassName' `
-        'Provide only the PSClass definition object or the PSClassName (to be looked up in the PSClassContainer).' `
-        ($PSClass -ne $null -and $PSClassName -ne $null)
 
-    if($PSClassName -ne $null) {
+    if($PSCmdlet.ParameterSetName -eq 'PSClassName') {
+        Guard-ArgumentNotNull 'PSClassName' $PSClassName
         $PSClass = [PSClassContainer]::ClassDefinitions[$PSClassName]
+    } else {
+        Guard-ArgumentNotNull 'PSClass' $PSClass
     }
 
     $foundClassInTypeNames = $false
@@ -30,11 +37,21 @@ function Guard-ObjectIsPSClass {
             ('InputObject does not appear have been created by New-PSClass, as the TypeName: {0} was not found.' -f $PSClass.__ClassName)))
     }
 
-
-
-    Attach-PSNote $class __Notes @{}
-    Attach-PSNote $class __Methods @{}
-    Attach-PSNote $class __Properties @{}
+    # Compare Members
+    foreach($classMember in $PSClass.__Members) {
+        $memberName = $classMember.Name
+        $objectMember = $InputObject.psobject.members[$memberName]
+        # compare member types
+        # we could go further and compare parameters for method scripts and property getter/setter, but that seems like overkill
+        # considering that the PSClass TypeName assertion prior to this
+        if ($objectMember -ne $null -and $objectMember.GetType() -ne $classMember.GetType())) {
+            throw (New-Object PSClassObjectDoesNotMatchException(
+                ('Member type mismatch. Class has member {0} which is {1}, where as the object has a member with the same name which is {2}' -f `
+                    $memberName, `
+                    $psMemberInfo.GetType(), `
+                    $objectMember.GetType())))
+        }
+    }
 }
 
 if (-not ([System.Management.Automation.PSTypeName]'PSClassObjectDoesNotMatchException').Type)
