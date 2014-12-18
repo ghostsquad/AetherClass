@@ -24,7 +24,7 @@ function New-PSClassMock {
             throw (new-object PSMockException("Method with name: $methodName cannot be found to mock!"))
         }
 
-        $methodToMockScript = $this._originalClass.__Methods[$methodName].Script
+        $methodToMockScript = $this._originalClass.__Methods[$methodName].PSScriptMethod.Script
 
         try {
             Assert-ScriptBlockParametersEqual $methodToMockScript $script
@@ -179,44 +179,47 @@ function New-PSClassMock {
     return $mock
 }
 
-$mockMethodInfoClass = New-PSClass 'MockMethodInfo' {
-    note 'PSClassMock'
-    note 'Name'
-    note 'Script'
-    note 'Invocations'
+$mockMethodInfoClass = ?: { [PSClassContainer]::ClassDefinitions.ContainsKey('MockMethodInfo') } `
+    { [PSClassContainer]::ClassDefinitions['MockMethodInfo'] } `
+    {   New-PSClass 'MockMethodInfo' {
+            note 'PSClassMock'
+            note 'Name'
+            note 'Script'
+            note 'Invocations'
 
-    constructor {
-        param($psClassMock, $name, $script = {})
-        $this.PSClassMock = $psClassMock
-        $this.Name = $name
-        $this.Script = $script
-        $this.Invocations = (New-Object System.Collections.ArrayList)
-    }
+            constructor {
+                param($psClassMock, $name, $script = {})
+                $this.PSClassMock = $psClassMock
+                $this.Name = $name
+                $this.Script = $script
+                $this.Invocations = (New-Object System.Collections.ArrayList)
+            }
 
-    method 'InvokeMethodScript' {
-        param($theArgs)
+            method 'InvokeMethodScript' {
+                param($theArgs)
 
-        [void]$this.Invocations.Add($theArgs)
+                [void]$this.Invocations.Add($theArgs)
 
-        $p1, $p2, $p3, $p4, $p5, $p6, $p7, $p8, $p9, $p10 = $theArgs
-        switch($theArgs.Count) {
-            0 {  return $this.Script.InvokeReturnAsIs() }
-            1 {  return $this.Script.InvokeReturnAsIs($p1) }
-            2 {  return $this.Script.InvokeReturnAsIs($p1, $p2) }
-            3 {  return $this.Script.InvokeReturnAsIs($p1, $p2, $p3) }
-            4 {  return $this.Script.InvokeReturnAsIs($p1, $p2, $p3, $p4) }
-            5 {  return $this.Script.InvokeReturnAsIs($p1, $p2, $p3, $p4, $p5) }
-            6 {  return $this.Script.InvokeReturnAsIs($p1, $p2, $p3, $p4, $p5, $p6) }
-            7 {  return $this.Script.InvokeReturnAsIs($p1, $p2, $p3, $p4, $p5, $p6, $p7) }
-            8 {  return $this.Script.InvokeReturnAsIs($p1, $p2, $p3, $p4, $p5, $p6, $p7, $p8) }
-            9 {  return $this.Script.InvokeReturnAsIs($p1, $p2, $p3, $p4, $p5, $p6, $p7, $p8, $p9) }
-            10 { return $this.Script.InvokeReturnAsIs($p1, $p2, $p3, $p4, $p5, $p6, $p7, $p8, $p9, $p10) }
-            default {
-                throw (new-object PSMockException("PSClassMock does not support more than 10 arguments for a method mock."))
+                $p1, $p2, $p3, $p4, $p5, $p6, $p7, $p8, $p9, $p10 = $theArgs
+                switch($theArgs.Count) {
+                    0 {  return $this.Script.InvokeReturnAsIs() }
+                    1 {  return $this.Script.InvokeReturnAsIs($p1) }
+                    2 {  return $this.Script.InvokeReturnAsIs($p1, $p2) }
+                    3 {  return $this.Script.InvokeReturnAsIs($p1, $p2, $p3) }
+                    4 {  return $this.Script.InvokeReturnAsIs($p1, $p2, $p3, $p4) }
+                    5 {  return $this.Script.InvokeReturnAsIs($p1, $p2, $p3, $p4, $p5) }
+                    6 {  return $this.Script.InvokeReturnAsIs($p1, $p2, $p3, $p4, $p5, $p6) }
+                    7 {  return $this.Script.InvokeReturnAsIs($p1, $p2, $p3, $p4, $p5, $p6, $p7) }
+                    8 {  return $this.Script.InvokeReturnAsIs($p1, $p2, $p3, $p4, $p5, $p6, $p7, $p8) }
+                    9 {  return $this.Script.InvokeReturnAsIs($p1, $p2, $p3, $p4, $p5, $p6, $p7, $p8, $p9) }
+                    10 { return $this.Script.InvokeReturnAsIs($p1, $p2, $p3, $p4, $p5, $p6, $p7, $p8, $p9, $p10) }
+                    default {
+                        throw (new-object PSMockException("PSClassMock does not support more than 10 arguments for a method mock."))
+                    }
+                }
             }
         }
     }
-}
 
 if (-not ([System.Management.Automation.PSTypeName]'PSMockException').Type)
 {

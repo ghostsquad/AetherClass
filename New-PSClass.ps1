@@ -47,11 +47,12 @@ function New-PSClass {
                 throw (new-object PSClassException("Note with name: $Name cannot be added twice."))
             }
 
-            if($class.__BaseClass -and $class.__BaseClass.__Notes[$name] -ne $null) {
+            if($class.__BaseClass -ne $null -and $class.__BaseClass.__Notes[$name] -ne $null) {
                 throw (new-object PSClassException("Note with name: $Name cannot be added, as it already exists on the base class."))
             }
 
-            $class.__Notes[$name] = @{Name=$name;DefaultValue=$value;}
+            $PSNoteProperty = new-object management.automation.PSNoteProperty $Name,$Value
+            $class.__Notes[$name] = @{PSNoteProperty=$PSNoteProperty;}
         }
     }
 
@@ -77,15 +78,16 @@ function New-PSClass {
             }
 
             if($override) {
-                $baseProperty = ?: {$class.__BaseClass} { $class.__BaseClass.__Properties[$name] } { $null }
+                $baseProperty = ?: { $class.__BaseClass -ne $null } { $class.__BaseClass.__Properties[$name] } { $null }
                 if($baseProperty -eq $null) {
                     throw (new-object PSClassException("Property with name: $Name cannot be override, as it does not exist on the base class."))
-                } elseif($baseProperty.SetScript -eq $null -xor $set -eq $null){
+                } elseif($baseProperty.PsScriptProperty.SetterScript -eq $null -xor $set -eq $null){
                     throw (new-object PSClassException("Property with name: $Name has setter which does not match the base class setter."))
                 }
             }
 
-            $class.__Properties[$name] = @{Name=$name;GetScript=$get;SetScript=$set;Override=$override}
+            $PsScriptProperty = new-object management.automation.PsScriptProperty $Name,$Get,$Set
+            $class.__Properties[$name] = @{PSScriptProperty=$PsScriptProperty;Override=$override}
         }
     }
 
@@ -110,15 +112,16 @@ function New-PSClass {
             }
 
             if($override) {
-                $baseMethod = ?: {$class.__BaseClass} { $class.__BaseClass.__Methods[$name] } { $null }
+                $baseMethod = ?: { $class.__BaseClass -ne $null } { $class.__BaseClass.__Methods[$name] } { $null }
                 if($baseMethod -eq $null) {
                     throw (new-object PSClassException("Method with name: $Name cannot be override, as it does not exist on the base class."))
                 } else {
-                    Assert-ScriptBlockParametersEqual $script $baseMethod.Script
+                    Assert-ScriptBlockParametersEqual $script $baseMethod.PSScriptMethod.Script
                 }
             }
 
-            $class.__Methods[$name] = @{Name=$name;Script=$script;Override=$override}
+            $PSScriptMethod = new-object management.automation.PSScriptMethod $Name,$script
+            $class.__Methods[$name] = @{PSScriptMethod=$PSScriptMethod;Override=$override}
         }
     }
     #endregion Class Definition Functions
@@ -139,8 +142,8 @@ function New-PSClass {
 
         if($this.__BaseClass -ne $null) {
             $private:p1, $private:p2, $private:p3, $private:p4, $private:p5, $private:p6, `
-                $private:p7, $private:p8, $private:p9, $private:p10 = $args
-            switch($args.Count) {
+                $private:p7, $private:p8, $private:p9, $private:p10 = $private:constructorParameters
+            switch($private:constructorParameters.Count) {
                 0 {  $private:instance = $this.__BaseClass.New() }
                 1 {  $private:instance = $this.__BaseClass.New($p1) }
                 2 {  $private:instance = $this.__BaseClass.New($p1, $p2) }
@@ -161,11 +164,7 @@ function New-PSClass {
             $private:instance = New-PSObject
         }
 
-        if($instance.psobject.members["__Class"] -eq $null){
-            Attach-PSNote $instance __Class $this.__ClassName
-        } else {
-            $instance.__Class += (".{0}" -f $this.__ClassName)
-        }
+        $instance.psobject.TypeNames.Insert(0, $this.__ClassName);
 
         PSClass_AttachMembersToInstanceObject $instance $this
 
@@ -188,6 +187,8 @@ function New-PSClass {
     # & $Definition
     [Void]([ScriptBlock]::Create($Definition.ToString()).InvokeReturnAsIs())
 
+    [Void]([PSClassContainer]::ClassDefinitions.Add($ClassName, $class))
+
     return $class
 }
 
@@ -199,17 +200,27 @@ function PSClass_AttachMembersToInstanceObject {
 
     # Attach Notes
     foreach($noteName in $Class.__Notes.Keys) {
+        $attachNoteParams = @{
+            InputObject = $Instance
+            PSNoteProperty = $Class.__Notes[$noteName].PSNoteProperty
+        }
 
-        Attach-PSNote $Instance $noteName $Class.__Notes[$noteName].DefaultValue
+        try {
+            Attach-PSNote @attachNoteParams
+        } catch {
+            $msg = "Unable to attach method: {0}; see AttachParams property for details" -f $methodName
+            $exception = (new-object PSClassException($msg, $_))
+            Attach-PSNote $exception "AttachParams" $attachNoteParams
+            throw $exception
+        }
+
     }
 
     # Attach Properties
     foreach($propertyName in $Class.__Properties.Keys) {
         $attachPropertyParams = @{
             InputObject = $Instance
-            Name = $propertyName
-            Get = $Class.__Properties[$propertyName].GetScript
-            Set = $Class.__Properties[$propertyName].SetScript
+            PSScriptProperty = $Class.__Properties[$propertyName].PSScriptProperty
             Override = $Class.__Properties[$propertyName].Override
         }
 
@@ -218,7 +229,7 @@ function PSClass_AttachMembersToInstanceObject {
         } catch {
             $msg = "Unable to attach property: {0}; see AttachParams property for details" -f $propertyName
             $exception = (new-object PSClassException($msg, $_))
-            Atttach-PSNote $exception "AttachParams" $attachPropertyParams
+            Attach-PSNote $exception "AttachParams" $attachPropertyParams
             throw $exception
         }
     }
@@ -227,8 +238,7 @@ function PSClass_AttachMembersToInstanceObject {
     foreach($methodName in $Class.__Methods.Keys){
         $attachScriptMethodParams = @{
             InputObject = $Instance
-            Name = $methodName
-            ScriptBlock = $Class.__Methods[$methodName].Script
+            PSScriptMethod = $Class.__Methods[$methodName].PSScriptMethod
             Override = $Class.__Methods[$methodName].Override
         }
         try {
@@ -236,7 +246,7 @@ function PSClass_AttachMembersToInstanceObject {
         } catch {
             $msg = "Unable to attach method: {0}; see AttachParams property for details" -f $methodName
             $exception = (new-object PSClassException($msg, $_))
-            Atttach-PSNote $exception "AttachParams" $attachScriptMethodParams
+            Attach-PSNote $exception "AttachParams" $attachScriptMethodParams
             throw $exception
         }
     }
@@ -294,5 +304,33 @@ if (-not ([System.Management.Automation.PSTypeName]'PSClassException').Type)
         {
         }
     }
+"@
+}
+
+if (-not ([System.Management.Automation.PSTypeName]'PSClassTypeAttribute').Type)
+{
+    Add-Type -WarningAction Ignore -TypeDefinition @"
+        using System;
+
+        public class PSClassTypeAttribute : Attribute {
+            public string Name { get; set; }
+
+            public PSClassTypeAttribute(string name) {
+                this.Name = name;
+            }
+        }
+"@
+}
+
+if (-not ([System.Management.Automation.PSTypeName]'PSClassContainer').Type)
+{
+    Add-Type -WarningAction Ignore -TypeDefinition @"
+        using System;
+        using System.Collections.Generic;
+        using System.Management.Automation;
+
+        public static class PSClassContainer {
+            public static readonly Dictionary<String,PSObject> ClassDefinitions = new Dictionary<String,PSObject>();
+        }
 "@
 }
