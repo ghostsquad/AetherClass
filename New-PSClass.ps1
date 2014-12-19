@@ -2,11 +2,20 @@ function New-PSClass {
     param (
         [string]$ClassName
       , [scriptblock]$Definition
-      , [psobject]$Inherit
+      , [object]$Inherit
+      , [switch]$PassThru
     )
 
     Guard-ArgumentNotNullOrEmpty 'ClassName' $ClassName
     Guard-ArgumentNotNull 'Definition' $Definition
+
+    if($Inherit -ne $null) {
+        if($Inherit -is [string]) {
+            $Inherit = [PSClassContainer]::ClassDefinitions[$Inherit]
+        } else {
+            Guard-ArgumentValid 'Inherit' '-Inherit Value must be a PSClass definition object' ($Inherit.__ClassName -ne $null)
+        }
+    }
 
     #region Class Definition Functions
     #======================================================================
@@ -193,7 +202,9 @@ function New-PSClass {
 
     [Void]([PSClassContainer]::ClassDefinitions.Add($ClassName, $class))
 
-    return $class
+    if($PassThru) {
+        return $class
+    }
 }
 
 function PSClass_AttachMembersToInstanceObject {

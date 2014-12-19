@@ -218,7 +218,7 @@ $mockMethodInfoClass = ?: { [PSClassContainer]::ClassDefinitions.ContainsKey('Mo
                     }
                 }
             }
-        }
+        } -PassThru
     }
 
 if (-not ([System.Management.Automation.PSTypeName]'PSMockException').Type)
