@@ -4,7 +4,7 @@ Set-StrictMode -Version Latest
 $here = Split-Path -Parent $MyInvocation.MyCommand.Path
 
 if(-not (Get-Module PoshBox.Core)){
-    Import-Module "$here\..\PoshBox.Core" -Global
+    Import-Module "$here\..\PoshBox.Core" -Global -DisableNameChecking
 }
 
 . $here\New-PSClass.ps1
