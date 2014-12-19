@@ -1,21 +1,25 @@
 # Performs a comparison of properties, notes, and methods.
 # Ensures that the inputobject has AT LEAST all the members
 # defined in the PSClass
-function Guard-ObjectIsPSClass {
+function Guard-ArgumentIsPSClass {
     [cmdletbinding(DefaultParameterSetName='PSClass')]
     param (
         [Parameter(Position=0,ParameterSetName='PSClass')]
         [Parameter(Position=0,ParameterSetName='PSClassName')]
-        [psobject]$InputObject,
+        [string]$ArgumentName
 
         [Parameter(Position=1,ParameterSetName='PSClass')]
+        [Parameter(Position=1,ParameterSetName='PSClassName')]
+        [psobject]$InputObject,
+
+        [Parameter(Position=2,ParameterSetName='PSClass')]
         [psobject]$PSClass,
 
-        [Parameter(Position=1,ParameterSetName='PSClassName')]
+        [Parameter(Position=2,ParameterSetName='PSClassName')]
         [string]$PSClassName
     )
 
-    Guard-ArgumentNotNull 'InputObject' $InputObject
+    Guard-ArgumentNotNull $ArgumentName $InputObject
 
     if($PSCmdlet.ParameterSetName -eq 'PSClassName') {
         Guard-ArgumentNotNull 'PSClassName' $PSClassName

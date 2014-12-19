@@ -9,6 +9,6 @@ if(-not (Get-Module PoshBox.Core)){
 
 . $here\New-PSClass.ps1
 . $here\New-PSClassMock.ps1
-. $here\Guard-ObjectIsPSClass.ps1
+. $here\Guard-ArgumentIsPSClass.ps1
 
 Export-ModuleMember -Function *-*
