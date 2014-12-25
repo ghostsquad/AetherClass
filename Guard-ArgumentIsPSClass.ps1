@@ -6,7 +6,7 @@ function Guard-ArgumentIsPSClass {
     param (
         [Parameter(Position=0,ParameterSetName='PSClass')]
         [Parameter(Position=0,ParameterSetName='PSClassName')]
-        [string]$ArgumentName
+        [string]$ArgumentName,
 
         [Parameter(Position=1,ParameterSetName='PSClass')]
         [Parameter(Position=1,ParameterSetName='PSClassName')]
