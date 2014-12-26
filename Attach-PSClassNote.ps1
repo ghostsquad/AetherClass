@@ -27,7 +27,7 @@ function Attach-PSClassNote {
             -and -not $Value.GetType().IsValueType `
             -and -not $Value.GetType() -eq [string]) {
 
-            $msg = "Currently only ValueTypes are supported for the default value of a note."
+            $msg = "Currently only ValueTypes & strings are supported for the default value of a note."
             $msg += "`nTo use a reference type, assign the value using the constructor"
             throw (new-object PSClassException($msg))
         }
