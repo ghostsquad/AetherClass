@@ -31,11 +31,12 @@ function New-PSClass {
             [scriptblock]$scriptblock = $(Throw "Constuctor scriptblock is required.")
         )
 
-        if ($class.__ConstructorScript -ne $null) {
-            Throw "Only one Constructor is allowed"
+        $splat = @{
+            class = $class
+            scriptblock = $scriptblock
         }
 
-        $class.__ConstructorScript = $scriptblock
+        Attach-PSClassConstructor @splat
     }
 
     # - - - - - - - - - - - - - - - - - - - - - - - -
@@ -43,33 +44,23 @@ function New-PSClass {
     #   Adds Notes record to class if non-static
     # - - - - - - - - - - - - - - - - - - - - - - - -
     function note {
+        [cmdletbinding()]
         param (
             [string]$name = $(Throw "Note Name is required.")
           , [object]$value
           , [switch]$static
+          , [switch]$forceValueAssignment
         )
 
-        if ($static) {
-            Attach-PSNote $class $name $value
-        } else {
-            if($class.__Notes[$name] -ne $null) {
-                throw (new-object PSClassException("Note with name: $Name cannot be added twice."))
-            }
-
-            if($class.__BaseClass -ne $null -and $class.__BaseClass.__Notes[$name] -ne $null) {
-                throw (new-object PSClassException("Note with name: $Name cannot be added, as it already exists on the base class."))
-            }
-
-            if($Value -ne $null -and -not $Value.GetType().IsValueType) {
-                $msg = "Currently only ValueTypes are supported for the default value of a note."
-                $msg += "`nTo use a reference type, assign the value using the constructor"
-                throw (new-object PSClassException($msg))
-            }
-
-            $PSNoteProperty = new-object management.automation.PSNoteProperty $Name,$Value
-            $class.__Notes[$name] = @{PSNoteProperty=$PSNoteProperty;}
-            [Void]$class.__Members.Add($PSNoteProperty)
+        $splat = @{
+            class = $class
+            name = $name
+            value = $value
+            static = $static
+            forceValueAssignment = $forceValueAssignment
         }
+
+        Attach-PSClassNote @splat
     }
 
     # - - - - - - - - - - - - - - - - - - - - - - - -
@@ -78,6 +69,7 @@ function New-PSClass {
     #   attaches it to the Class if it is static
     # - - - - - - - - - - - - - - - - - - - - - - - -
     function property {
+        [cmdletbinding()]
         param (
             [string]$name
           , [scriptblock]$get
@@ -86,26 +78,16 @@ function New-PSClass {
           , [switch]$override
         )
 
-        if ($static) {
-            Attach-PSProperty $class $name $get $set
-        } else {
-            if($class.__Properties[$name] -ne $null) {
-                throw (new-object PSClassException("Property with name: $Name cannot be added twice."))
-            }
-
-            if($override) {
-                $baseProperty = ?: { $class.__BaseClass -ne $null } { $class.__BaseClass.__Properties[$name] } { $null }
-                if($baseProperty -eq $null) {
-                    throw (new-object PSClassException("Property with name: $Name cannot be override, as it does not exist on the base class."))
-                } elseif($baseProperty.PsScriptProperty.SetterScript -eq $null -xor $set -eq $null){
-                    throw (new-object PSClassException("Property with name: $Name has setter which does not match the base class setter."))
-                }
-            }
-
-            $PsScriptProperty = new-object management.automation.PsScriptProperty $Name,$Get,$Set
-            $class.__Properties[$name] = @{PSScriptProperty=$PsScriptProperty;Override=$override}
-            [Void]$class.__Members.Add($PsScriptProperty)
+        $splat = @{
+            class = $class
+            name = $name
+            get = $get
+            set = $set
+            static = $static
+            override = $override
         }
+
+        Attach-PSClassProperty @splat
     }
 
     # - - - - - - - - - - - - - - - - - - - - - - - -
@@ -114,6 +96,7 @@ function New-PSClass {
     #   attaches it to the Class if it is static
     # - - - - - - - - - - - - - - - - - - - - - - - -
     function method {
+        [cmdletbinding()]
         param  (
             [string]$name = $(Throw "Method Name is required.")
           , [scriptblock]$script = $(Throw "Method Script is required.")
@@ -121,26 +104,15 @@ function New-PSClass {
           , [switch]$override
         )
 
-        if ($static) {
-            Attach-PSScriptMethod $class $name $script
-        } else {
-            if($class.__Methods[$name] -ne $null) {
-                throw (new-object PSClassException("Method with name: $Name cannot be added twice."))
-            }
-
-            if($override) {
-                $baseMethod = ?: { $class.__BaseClass -ne $null } { $class.__BaseClass.__Methods[$name] } { $null }
-                if($baseMethod -eq $null) {
-                    throw (new-object PSClassException("Method with name: $Name cannot be override, as it does not exist on the base class."))
-                } else {
-                    Assert-ScriptBlockParametersEqual $script $baseMethod.PSScriptMethod.Script
-                }
-            }
-
-            $PSScriptMethod = new-object management.automation.PSScriptMethod $Name,$script
-            $class.__Methods[$name] = @{PSScriptMethod=$PSScriptMethod;Override=$override}
-            [Void]$class.__Members.Add($PSScriptMethod)
+        $splat = @{
+            class = $class
+            name = $name
+            script = $script
+            static = $static
+            override = $override
         }
+
+        Attach-PSClassMethod @splat
     }
     #endregion Class Definition Functions
 
