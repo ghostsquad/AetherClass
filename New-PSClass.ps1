@@ -11,7 +11,7 @@ function New-PSClass {
 
     if($Inherit -ne $null) {
         if($Inherit -is [string]) {
-            $Inherit = [PSClassContainer]::ClassDefinitions[$Inherit]
+            $Inherit = Get-PSClass $Inherit
         } else {
             Guard-ArgumentValid 'Inherit' '-Inherit Value must be a PSClass definition object' ($Inherit.__ClassName -ne $null)
         }
@@ -178,7 +178,7 @@ function New-PSClass {
     # & $Definition
     [Void]([ScriptBlock]::Create($Definition.ToString()).InvokeReturnAsIs())
 
-    [Void]([PSClassContainer]::ClassDefinitions.Add($ClassName, $class))
+    [Void]$Global:__PSClassDefinitions__.Add($ClassName, $class)
 
     if($PassThru) {
         return $class
@@ -315,15 +315,6 @@ if (-not ([System.Management.Automation.PSTypeName]'PSClassTypeAttribute').Type)
 "@
 }
 
-if (-not ([System.Management.Automation.PSTypeName]'PSClassContainer').Type)
-{
-    Add-Type -WarningAction Ignore -TypeDefinition @"
-        using System;
-        using System.Collections.Generic;
-        using System.Management.Automation;
-
-        public static class PSClassContainer {
-            public static readonly Dictionary<String,PSObject> ClassDefinitions = new Dictionary<String,PSObject>();
-        }
-"@
+if (-not (test-path variable:\Global:__PSClassDefinitions__)) {
+    $Global:__PSClassDefinitions__ = New-GenericObject System.Collections.Generic.Dictionary string,psobject
 }

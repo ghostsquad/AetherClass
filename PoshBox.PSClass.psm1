@@ -12,6 +12,7 @@ if(-not (Get-Module PoshBox.Core)){
 . $here\Attach-PSClassNote.ps1
 . $here\Attach-PSClassProperty.ps1
 . $here\New-PSClass.ps1
+. $here\Get-PSClass.ps1
 . $here\New-PSClassMock.ps1
 . $here\Guard-ArgumentIsPSClass.ps1
 

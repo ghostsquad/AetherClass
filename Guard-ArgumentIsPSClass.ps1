@@ -23,7 +23,7 @@ function Guard-ArgumentIsPSClass {
 
     if($PSCmdlet.ParameterSetName -eq 'PSClassName') {
         Guard-ArgumentNotNull 'PSClassName' $PSClassName
-        $PSClass = [PSClassContainer]::ClassDefinitions[$PSClassName]
+        $PSClass = Get-PSClass $PSClassName
     } else {
         Guard-ArgumentNotNull 'PSClass' $PSClass
         $PSClassName = $PSClass.__ClassName
@@ -39,7 +39,7 @@ function Guard-ArgumentIsPSClass {
 
     if(-not $foundClassInTypeNames) {
         throw (New-Object PSClassObjectDoesNotMatchException(
-            ('InputObject does not appear have been created by New-PSClass, as the TypeName: {0} was not found.' -f $PSClass.__ClassName)))
+            ('InputObject does not appear have been created by New-PSClass, as the TypeName: {0} was not found in the objects TypeNames list.' -f $PSClass.__ClassName)))
     }
 
     # Compare Members
