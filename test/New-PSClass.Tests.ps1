@@ -17,6 +17,18 @@ Describe "New-PSClass" {
         $derivedClass = New-PSClass $derivedClassName -Inherit $className {} -PassThru
     }
 
+    It 'can override OBJECT methods (like ToString())' {
+        $className = [Guid]::NewGuid().ToString()
+        $testClass = New-PSClass $className {
+            method -override 'ToString' {
+                return 'foo'
+            }
+        } -PassThru
+
+        $sut = $testClass.New()
+        $sut.ToString() | Should Be 'foo'
+    }
+
     Context 'PassThru' {
         It 'Returns class object when given -PassThru switch' {
             $className = [Guid]::NewGuid().ToString()

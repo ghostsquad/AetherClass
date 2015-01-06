@@ -201,8 +201,9 @@ function PSClass_AttachMembersToInstanceObject {
         try {
             Attach-PSNote @attachNoteParams
         } catch {
-            $msg = "Unable to attach method: {0}; see AttachParams property for details" -f $methodName
-            $exception = (new-object PSClassException($msg, $_))
+            $e = $_
+            $msg = "Unable to attach method: {0}; see AttachParams and ErrorRecord properties for details" -f $methodName
+            $exception = (new-object PSClassException($msg, $e))
             Attach-PSNote $exception "AttachParams" $attachNoteParams
             throw $exception
         }
@@ -220,8 +221,9 @@ function PSClass_AttachMembersToInstanceObject {
         try {
             Attach-PSProperty @attachPropertyParams
         } catch {
-            $msg = "Unable to attach property: {0}; see AttachParams property for details" -f $propertyName
-            $exception = (new-object PSClassException($msg, $_))
+            $e = $_
+            $msg = "Unable to attach property: {0}; see AttachParams and ErrorRecord properties for details" -f $propertyName
+            $exception = (new-object PSClassException($msg, $e))
             Attach-PSNote $exception "AttachParams" $attachPropertyParams
             throw $exception
         }
@@ -237,8 +239,9 @@ function PSClass_AttachMembersToInstanceObject {
         try {
             Attach-PSScriptMethod @attachScriptMethodParams
         } catch {
-            $msg = "Unable to attach method: {0}; see AttachParams property for details" -f $methodName
-            $exception = (new-object PSClassException($msg, $_))
+            $e = $_
+            $msg = "Unable to attach method: {0}; see AttachParams and ErrorRecord properties for details" -f $methodName
+            $exception = (new-object PSClassException($msg, $e))
             Attach-PSNote $exception "AttachParams" $attachScriptMethodParams
             throw $exception
         }

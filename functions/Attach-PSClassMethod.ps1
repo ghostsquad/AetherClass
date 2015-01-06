@@ -20,11 +20,14 @@ function Attach-PSClassMethod {
         }
 
         if($override) {
-            $baseMethod = ?: { $Class.__BaseClass -ne $null } { $Class.__BaseClass.__Methods[$name] } { $null }
-            if($baseMethod -eq $null) {
-                throw (new-object PSClassException("Method with name: $Name cannot be override, as it does not exist on the base class."))
-            } else {
-                Assert-ScriptBlockParametersEqual $script $baseMethod.PSScriptMethod.Script
+            $objectVirtualMethodNames = [type]::GetType('System.Object').GetMembers() | ?{$_.IsVirtual} | %{$_.Name}
+            if($objectVirtualMethodNames -notcontains $name) {
+                $baseMethod = ?: { $Class.__BaseClass -ne $null } { $Class.__BaseClass.__Methods[$name] } { $null }
+                if($baseMethod -eq $null) {
+                    throw (new-object PSClassException("Method with name: $Name cannot be overridden, as it does not exist on the base class."))
+                } else {
+                    Assert-ScriptBlockParametersEqual $script $baseMethod.PSScriptMethod.Script
+                }
             }
         }
 
