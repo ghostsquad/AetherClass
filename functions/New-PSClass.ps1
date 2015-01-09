@@ -166,6 +166,11 @@ function New-PSClass {
         return $instance
     }
 
+    Attach-PSScriptMethod $class "Dispose" {
+        $Global:__PSClassDefinitions__.Remove($fixtureClass.__ClassName)
+    }
+
+
     # invoking the scriptblock directly without first converting it to a string
     # does not reliably use the current context, thus the internal methods:
     # constructor, method, note, property
