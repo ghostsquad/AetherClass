@@ -129,27 +129,12 @@ function New-PSClass {
 
     # This is how the caller can create a new instance of this class
     Attach-PSScriptMethod $class "New" {
-        $private:constructorParameters = $args
-
         if($this.__BaseClass -ne $null) {
-            $private:p1, $private:p2, $private:p3, $private:p4, $private:p5, $private:p6, `
-                $private:p7, $private:p8, $private:p9, $private:p10 = $private:constructorParameters
-            switch($private:constructorParameters.Count) {
-                0 {  $private:instance = $this.__BaseClass.New() }
-                1 {  $private:instance = $this.__BaseClass.New($p1) }
-                2 {  $private:instance = $this.__BaseClass.New($p1, $p2) }
-                3 {  $private:instance = $this.__BaseClass.New($p1, $p2, $p3) }
-                4 {  $private:instance = $this.__BaseClass.New($p1, $p2, $p3, $p4) }
-                5 {  $private:instance = $this.__BaseClass.New($p1, $p2, $p3, $p4, $p5) }
-                6 {  $private:instance = $this.__BaseClass.New($p1, $p2, $p3, $p4, $p5, $p6) }
-                7 {  $private:instance = $this.__BaseClass.New($p1, $p2, $p3, $p4, $p5, $p6, $p7) }
-                8 {  $private:instance = $this.__BaseClass.New($p1, $p2, $p3, $p4, $p5, $p6, $p7, $p8) }
-                9 {  $private:instance = $this.__BaseClass.New($p1, $p2, $p3, $p4, $p5, $p6, $p7, $p8, $p9) }
-                10 { $private:instance = $this.__BaseClass.New($p1, $p2, $p3, $p4, $p5, $p6, $p7, $p8, $p9, $p10) }
-                default {
-                    throw (new-object PSClassException("PSClass does not support more than 10 arguments for a constructor."))
-                }
+            if($args.count -gt 10) {
+                throw (new-object PSClassException("PSClass does not support more than 10 arguments for a constructor."))
             }
+
+            $private:instance = New-PSClassInstance $this.__BaseClass.__ClassName -ArgumentList $args
         }
         else {
             $private:instance = New-PSObject
@@ -160,7 +145,7 @@ function New-PSClass {
         PSClass_AttachMembersToInstanceObject $instance $this
 
         if($this.__ConstructorScript -ne $null) {
-            PSClass_RunConstructor $instance $this.__ConstructorScript $constructorParameters
+            PSClass_RunConstructor $instance $this.__ConstructorScript $args
         }
 
         return $instance

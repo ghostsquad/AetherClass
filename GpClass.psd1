@@ -66,6 +66,7 @@ SOFTWARE.
                         'Get-PSClass'
                         'Guard-ArgumentIsPSClass'
                         'New-PSClass'
+                        'New-PSClassInstance'
                         'New-PSClassMock'
                         )
 
@@ -73,14 +74,15 @@ SOFTWARE.
                         'LICENSE'
                         'GpClass.psd1'
                         'GpClass.psm1'
-                        'functions/Attach-PSClassConstructor'
-                        'functions/Attach-PSClassMethod'
-                        'functions/Attach-PSClassNote'
-                        'functions/Attach-PSClassProperty'
-                        'functions/Get-PSClass'
-                        'functions/Guard-ArgumentIsPSClass'
-                        'functions/New-PSClass'
-                        'functions/New-PSClassMock'
+                        'functions/Attach-PSClassConstructor.ps1'
+                        'functions/Attach-PSClassMethod.ps1'
+                        'functions/Attach-PSClassNote.ps1'
+                        'functions/Attach-PSClassProperty.ps1'
+                        'functions/Get-PSClass.ps1'
+                        'functions/Guard-ArgumentIsPSClass.ps1'
+                        'functions/New-PSClass.ps1'
+                        'functions/New-PSClassInstance.ps1'
+                        'functions/New-PSClassMock.ps1'
                         )
 
           PrivateData = @{
