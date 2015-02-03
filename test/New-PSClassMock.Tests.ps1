@@ -2,6 +2,20 @@ $here = Split-Path -Parent $MyInvocation.MyCommand.Path
 . "$here\..\TestCommon.ps1"
 
 Describe "New-PSClassMock" {
+    It 'Can generate mock from ClassName' {
+        $className = [Guid]::NewGuid().ToString()
+        New-PSClass $className {}
+
+        { New-PSClassMock $className } | Should Not Throw
+    }
+
+    It 'Can generate mock from Class Object' {
+        $className = [Guid]::NewGuid().ToString()
+        $testClass = New-PSClass $className {} -PassThru
+
+        { New-PSClassMock $testClass } | Should Not Throw
+    }
+
     Context "Method Mocking" {
         BeforeEach {
             $className = [Guid]::NewGuid().ToString()

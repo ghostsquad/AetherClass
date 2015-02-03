@@ -1,10 +1,22 @@
 function New-PSClassMock {
+    [cmdletbinding(DefaultParameterSetName='PSClass')]
     param (
-        [PSObject]$Class = $( Throw "parameter -Class is required." )
-      , [Switch]$Strict
+        [Parameter(Position=0,ParameterSetName='PSClass')]
+        [PSObject]$Class,
+        [Parameter(Position=0,ParameterSetName='PSClassName')]
+        [String]$ClassName,
+        [Switch]$Strict
     )
 
-    Guard-ArgumentNotNull 'Class' $Class
+    if($PSCmdlet.ParameterSetName -eq 'PSClass') {
+        Guard-ArgumentNotNull 'Class' $Class
+    } else {
+        Guard-ArgumentNotNull 'ClassName' $ClassName
+        $Class = Get-PSClass $ClassName
+        if($Class -eq $null) {
+            throw (New-Object System.ArgumentException(('A PSClass cannot be found with name: {0}' -f $ClassName)))
+        }
+    }
 
     $mock = New-PSObject
     Attach-PSNote $mock '_strict' ([bool]$Strict)
