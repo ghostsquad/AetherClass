@@ -123,7 +123,7 @@ function New-PSClass {
     Attach-PSNote $class __Notes @{}
     Attach-PSNote $class __Methods @{}
     Attach-PSNote $class __Properties @{}
-    Attach-PSNote $class __Members (New-Object System.Collections.Generic.List[System.Management.Automation.PSMemberInfo])
+    Attach-PSNote $class __Members @{}
     Attach-PSNote $class __BaseClass $Inherit
     Attach-PSNote $class __ConstructorScript
 

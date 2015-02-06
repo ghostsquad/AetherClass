@@ -26,47 +26,89 @@ function New-PSClassMock {
     Attach-PSNote $mock 'Object' (New-PSObject)
     Attach-PSNote $mock.Object '____mock' $mock
 
+    Attach-PSScriptMethod $mock 'Setup' {
+        param (
+            [string]$memberName,
+            [object]$returnObjectOrMethodDefinition,
+            [ref][object]$callbackValue
+        )
+
+        $member = $this._originalClass.__Members[$memberName]
+        if($member -eq $null) {
+            throw (new-object PSMockException("Member with name: $memberName cannot be found to mock!"))
+        }
+
+        if($member -is [System.Management.Automation.PSScriptMethod]) {
+            if(-not $this._originalClass.__Methods.ContainsKey($memberName)) {
+                throw (new-object PSMockException("Method with name: $memberName cannot be found to mock!"))
+            }
+
+            Guard-ArgumentValid 'returnObjectOrMethodDefinition' -Test ($returnObjectOrMethodDefinition -is [Scriptblock])
+
+            $methodToMockScript = $this._originalClass.__Methods[$memberName].PSScriptMethod.Script
+
+            try {
+                Assert-ScriptBlockParametersEqual $methodToMockScript $returnObjectOrMethodDefinition
+            } catch {
+                $msg = "Unable to mock method: {0}" -f $memberName
+                $exception = (new-object PSMockException($msg, $_))
+                throw $exception
+            }
+
+            # add the actual mocked script to the mock internals
+            $mockMethodInfoClass = Get-PSClass 'PSClass.MockMethodInfo'
+            $this._mockedMethods[$memberName] = $mockMethodInfoClass.New($this, $memberName, $returnObjectOrMethodDefinition)
+
+            # replace the method script in the class we are to mock with a call to the mocked script
+            # because we are doing a bit of redirection, it allows us to capture information about each method call
+            $scriptBlockText = [string]::Format('$this.____mock._mockedMethods[''{0}''].InvokeMethodScript($Args)', $memberName)
+            $mockedMethodScript = [ScriptBlock]::Create($scriptBlockText)
+
+            $member = new-object management.automation.PSScriptMethod $memberName,$mockedMethodScript
+            $this.Object.psobject.methods.remove($memberName)
+            [Void]$this.Object.psobject.methods.add($member)
+        }
+
+        if($member -is [System.Management.Automation.PSNoteProperty] `
+            -or $member -is [System.Management.Automation.PSScriptProperty]) {
+
+            if(-not $this._originalClass.__Properties.ContainsKey($memberName) -and `
+                -not $this._originalClass.__Notes.ContainsKey($memberName)) {
+                throw (new-object PSMockException("Note or Property with name: $memberName cannot be found to mock!"))
+            }
+
+            $originalProperty = $this.Object.psobject.properties.Item($memberName)
+
+            $getter = { return $returnObjectOrMethodDefinition }.GetNewClosure()
+
+            if($callbackValue -eq $null) {
+                $setter = {}
+            } else {
+                $setter = {param($a) $callbackValue.Value = $a}.GetNewClosure()
+            }
+
+            $member = new-object management.automation.PSScriptProperty $memberName,$getter,$setter
+            $this.Object.psobject.properties.remove($memberName)
+            [Void]$this.Object.psobject.properties.add($member)
+        }
+    }
+
     Attach-PSScriptMethod $mock 'SetupMethod' {
         param (
             [string]$methodName
-          , [scriptblock]$script
+          , [object]$returnObject
         )
 
-        if(-not $this._originalClass.__Methods.ContainsKey($methodName)) {
-            throw (new-object PSMockException("Method with name: $methodName cannot be found to mock!"))
-        }
-
-        $methodToMockScript = $this._originalClass.__Methods[$methodName].PSScriptMethod.Script
-
-        try {
-            Assert-ScriptBlockParametersEqual $methodToMockScript $script
-        } catch {
-            $msg = "Unable to mock method: {0}" -f $methodName
-            $exception = (new-object PSMockException($msg, $_))
-            throw $exception
-        }
-
-        # add the actual mocked script to the mock internals
-        $mockMethodInfoClass = Get-PSClass 'PSClass.MockMethodInfo'
-        $this._mockedMethods[$methodName] = $mockMethodInfoClass.New($this, $methodName, $script)
-
-        # replace the method script in the class we are to mock with a call to the mocked script
-        # because we are doing a bit of redirection, it allows us to capture information about each method call
-        $scriptBlockText = [string]::Format('$this.____mock._mockedMethods[''{0}''].InvokeMethodScript($Args)', $methodName)
-        $mockedMethodScript = [ScriptBlock]::Create($scriptBlockText)
-
-        $member = new-object management.automation.PSScriptMethod $methodName,$mockedMethodScript
-        $this.Object.psobject.methods.remove($methodName)
-        [Void]$this.Object.psobject.methods.add($member)
+        $this.Setup($methodName, $returnObject)
     }
 
     Attach-PSScriptMethod $mock 'SetupNoteGet' {
         param (
             [string]$noteName
-          , [scriptblock]$getter
+          , [object]$returnObject
         )
 
-        $this._SetupNoteOrProperty($noteName, $getter, $null)
+        $this.Setup($noteName, $returnObject)
     }
 
     Attach-PSScriptMethod $mock 'SetupNoteSet' {
@@ -75,16 +117,16 @@ function New-PSClassMock {
           , [ref][object]$callbackValue
         )
 
-        $this._SetupNoteOrProperty($noteName, $null, $callbackValue)
+        $this.Setup($noteName, $null, $callbackValue)
     }
 
     Attach-PSScriptMethod $mock 'SetupPropertyGet' {
         param (
             [string]$propertyName
-          , [scriptblock]$getter
+          , [object]$returnObject
         )
 
-        $this._SetupNoteOrProperty($propertyName, $getter, $null)
+        $this.Setup($propertyName, $returnObject)
     }
 
     Attach-PSScriptMethod $mock 'SetupPropertySet' {
@@ -93,42 +135,13 @@ function New-PSClassMock {
           , [ref][object]$callbackValue
         )
 
-        $this._SetupNoteOrProperty($propertyName, $null, $callbackValue)
-    }
-
-    Attach-PSScriptMethod $mock '_SetupNoteOrProperty' {
-        param (
-            [string]$noteOrPropertyName
-          , [scriptblock]$getter
-          , [ref][object]$callbackValue
-        )
-
-        if(-not $this._originalClass.__Properties.ContainsKey($noteOrPropertyName) -and `
-            -not $this._originalClass.__Notes.ContainsKey($noteOrPropertyName)) {
-            throw (new-object PSMockException("Note or Property with name: $noteOrPropertyName cannot be found to mock!"))
-        }
-
-        $originalProperty = $this.Object.psobject.properties.Item($noteOrPropertyName)
-
-        if($getter -eq $null) {
-            $getter = $originalProperty.GetterScript
-        }
-
-        if($callbackValue -ne $null) {
-            $setter = {param($a) $callbackValue.Value = $a}.GetNewClosure()
-        } else {
-            $setter = {}
-        }
-
-        $member = new-object management.automation.PSScriptProperty $noteOrPropertyName,$getter,$setter
-        $this.Object.psobject.properties.remove($noteOrPropertyName)
-        [Void]$this.Object.psobject.properties.add($member)
+        $this.Setup($propertyName, $null, $callbackValue)
     }
 
     Attach-PSScriptMethod $mock 'Verify' {
         param (
-            [string]$methodName,
-            [object[]]$expectations
+            [string]$methodName
+          , [object[]]$expectations
         )
 
         function Assert-True {

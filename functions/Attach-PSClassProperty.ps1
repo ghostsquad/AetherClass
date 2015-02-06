@@ -31,6 +31,6 @@ function Attach-PSClassProperty {
 
         $PsScriptProperty = new-object management.automation.PsScriptProperty $Name,$Get,$Set
         $Class.__Properties[$name] = @{PSScriptProperty=$PsScriptProperty;Override=$override}
-        [Void]$Class.__Members.Add($PsScriptProperty)
+        [Void]$Class.__Members.Add($Name, $PsScriptProperty)
     }
 }

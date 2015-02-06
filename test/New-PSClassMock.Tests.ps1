@@ -26,6 +26,12 @@ Describe "New-PSClassMock" {
             } -PassThru
         }
 
+        It "Can mock method using generic 'setup'" {
+            $mock = New-PSClassMock $testClass
+            { $mock.Setup('Foo', {return "i am a test"}) } | Should Not Throw
+            $mock.Object.foo() | Should Be "i am a test"
+        }
+
         It "Given Non-Strict, No Expectation, methods do nothing, return null" {
             $mock = New-PSClassMock $testClass
             { $mock.Object.foo() } | Should Not Throw
@@ -190,6 +196,22 @@ Describe "New-PSClassMock" {
             } -PassThru
         }
 
+        It "Can mock note getter using generic 'setup'" {
+            $mock = New-PSClassMock $testClass
+            { $mock.Setup('myNote', "i am a test") } | Should Not Throw
+            $mock.Object.myNote | Should Be "i am a test"
+        }
+
+        It "Can mock note setter using generic 'setup'" {
+            $mock = New-PSClassMock $testClass
+
+            $actualValue = $null
+
+            { $mock.Setup('myNote', $null, [ref]$actualValue) } | Should Not Throw
+            $mock.Object.myNote = "i am a test"
+            $actualValue | Should Be "i am a test"
+        }
+
         It "Includes notes from class" {
             $mock = New-PSClassMock $testClass
             $mock.Object.myNote | Should Be $null
@@ -199,9 +221,7 @@ Describe "New-PSClassMock" {
             $expectedValue = "im expected"
 
             $mock = New-PSClassMock $testClass -Strict
-            $mock.SetupNoteGet("myNote", {
-                return $expectedValue
-            }.GetNewClosure())
+            $mock.SetupNoteGet("myNote", $expectedValue)
 
             $mock.Object.myNote | Should Be $expectedValue
         }
@@ -228,6 +248,22 @@ Describe "New-PSClassMock" {
             } -PassThru
         }
 
+        It "Can mock property getter using generic 'setup'" {
+            $mock = New-PSClassMock $testClass
+            { $mock.Setup('myProp', "i am a test") } | Should Not Throw
+            $mock.Object.myProp | Should Be "i am a test"
+        }
+
+        It "Can mock property setter using generic 'setup'" {
+            $mock = New-PSClassMock $testClass
+
+            $actualValue = $null
+
+            { $mock.Setup('myProp', $null, [ref]$actualValue) } | Should Not Throw
+            $mock.Object.myProp = "i am a test"
+            $actualValue | Should Be "i am a test"
+        }
+
         It "Includes properties from class" {
             $mock = New-PSClassMock $testClass
             $mock.Object.myProp | Should Be $null
@@ -238,9 +274,7 @@ Describe "New-PSClassMock" {
 
             $expectedValue = "im expected"
 
-            $mock.SetupPropertyGet("myProp", {
-                return $expectedValue
-            }.GetNewClosure())
+            $mock.SetupPropertyGet("myProp", $expectedValue)
 
             $mock.Object.myProp | Should Be $expectedValue
         }

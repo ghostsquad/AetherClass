@@ -43,7 +43,7 @@ function Guard-ArgumentIsPSClass {
     }
 
     # Compare Members
-    foreach($classMember in $PSClass.__Members) {
+    foreach($classMember in $PSClass.__Members.Values) {
         $memberName = $classMember.Name
         $objectMember = $InputObject.psobject.members[$memberName]
         # compare member types

@@ -33,6 +33,6 @@ function Attach-PSClassMethod {
 
         $PSScriptMethod = new-object management.automation.PSScriptMethod $Name,$script
         $Class.__Methods[$name] = @{PSScriptMethod=$PSScriptMethod;Override=$override}
-        [Void]$Class.__Members.Add($PSScriptMethod)
+        [Void]$Class.__Members.Add($Name, $PSScriptMethod)
     }
 }

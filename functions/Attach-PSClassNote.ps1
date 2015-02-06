@@ -34,6 +34,6 @@ function Attach-PSClassNote {
 
         $PSNoteProperty = new-object management.automation.PSNoteProperty $Name,$Value
         $Class.__Notes[$name] = @{PSNoteProperty=$PSNoteProperty;}
-        [Void]$Class.__Members.Add($PSNoteProperty)
+        [Void]$Class.__Members.Add($Name, $PSNoteProperty)
     }
 }
