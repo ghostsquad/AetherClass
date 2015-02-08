@@ -143,7 +143,9 @@ Describe "New-PSClassMock" {
 
             [Void]$mock.Object.foo(1,1)
 
-            { $mock.Verify('foo', @($a, $b)) } | Should Throw
+            $param1expectation = {$args[0] -eq $a}.GetNewClosure()
+            $param2expectation = {$args[0] -eq $b}.GetNewClosure()
+            { $mock.Verify('foo', @($param1expectation, $param2expectation)) } | Should Throw
         }
 
         It "mock.Verify, multiple equivalent params, does not throw" {
@@ -161,7 +163,8 @@ Describe "New-PSClassMock" {
 
             [Void]$mock.Object.foo(1,1)
 
-            { $mock.Verify('foo', @(1,1)) } | Should Not Throw
+            $expectation = {$args[0] -eq 1}.GetNewClosure()
+            { $mock.Verify('foo', @($expectation, $expectation)) } | Should Not Throw
         }
 
         It "can get method invocation info" {
@@ -180,6 +183,8 @@ Describe "New-PSClassMock" {
             $expectedA = 'expectedA'
             $expectedB = 'expectedB'
             [Void]$mock.Object.foo($expectedA, $expectedB)
+
+            $mock.Verify
 
             $mock._mockedMethods["foo"].Invocations.Count | Should Be 1
             $mock._mockedMethods["foo"].Invocations[0].Count | Should Be 2
