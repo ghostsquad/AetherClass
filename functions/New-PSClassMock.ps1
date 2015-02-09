@@ -19,18 +19,48 @@ if(-not Get-PSClass 'GpClass.Mock') {
             $this._mockedProperties = @{}
 
             $theMockObject = New-PSObject
-            Attach-PSNote $theMockObject '____mock' $mock
+            Attach-PSNote $theMockObject '____mock' $this
+
+            $mockDefinition = $this
 
             foreach($methodName in $Class.__Methods.Keys) {
-                if($Strict) {
-                    $mockedMethodScript = {
+                $this._mockedMethods[$methodName] = New-Object System.Collections.Arraylist
+                $mockedMethodScript = {
+                    #because $this & $args are automatic variables,
+                    #the automatic version of the variable will
+                    #override the any variable with the same name that may be captured from GetNewClosure()
+                    $methodSetupInfoCollection = $mockDefinition._mockedMethods[$methodName]
+                    foreach($methodSetupInfo in $mockDefinition._mockedMethods[$methodName]) {
+                        $invocationMetExpections = $true
+                        if($methodSetupInfo.Expectations.Count -ne $Args.Count) {
+                            $invocationMetExpections = $false
+                        }
+
+                        for($i = 0; -lt $Args.Count; $i++) {
+                            $invocationMetExpections = $methodSetupInfo.Expectations[$i].Invoke($Args[$i])
+                            if(-not $invocationMetExpections) {
+                                break;
+                            }
+                        }
+
+                        if($invocationMetExpections) {
+                            [Void]$methodSetupInfo.Invocations.Add($Args)
+                            if($methodSetupInfo.ExceptionToThrow -ne $null) {
+                                throw $methodSetupInfo.ExceptionToThrow
+                            }
+
+                            [Void]$methodSetupInfo.InvokeMethodScript($Args)
+                            [Void]$methodSetupInfo.CallBackAction.Invoke($Args)
+                            return $methodSetupInfo.ReturnValue
+                        }
+                    }
+
+                    if($Strict) {
                         throw (new-object PSMockException("This Mock is strict and no expectation was set for method ...."))
                     }
-                } else {
-                    $mockedMethodScript = {}
-                }
+                }.GetNewClosure()
 
-                Attach-PSMethod $theMockObject $methodName $mockedMethodScript
+                Attach-PSScriptMethod $theMockObject $methodName $mockedMethodScript
             }
 
             $notesAndPropertyKeys = New-Object System.Collections.Arraylist
@@ -38,6 +68,7 @@ if(-not Get-PSClass 'GpClass.Mock') {
             $notesAndPropertyKeys.AddRange($Class.__Notes.Keys)
 
             foreach($propertyName in $notesAndPropertyKeys) {
+                $this._mockedProperties[$propertyName] = New-Object System.Collections.Arraylist
                 Attach-PSProperty $theMockObject $propertyName {} {}
             }
 
@@ -46,70 +77,23 @@ if(-not Get-PSClass 'GpClass.Mock') {
 
         method 'Setup' {
             param (
-                [string]$MemberName,
-                [func[object, bool][]]$Expectations = (New-Object 'func[object, bool][]'(0)),
-                [object]$ReturnObjectOrMethodDefinition,
-                [ref][object]$CallbackValue
+                [string]$MethodName,
+                [func[object, bool][]]$Expectations = (New-Object 'func[object, bool][]'(0))
             )
 
-            $member = $this._originalClass.__Members[$MemberName]
-            if($member -eq $null) {
-                throw (new-object PSMockException("Member with name: $MemberName cannot be found to mock!"))
+            Guard-ArgumentNotNull 'MethodName' $MethodName
+            Guard-ArgumentNotNull 'Expectations' $Expectations
+
+            if(-not $this._originalClass.__Methods.ContainsKey($MethodName)) {
+                throw (new-object PSMockException("Method with name: $MethodName cannot be found to mock!"))
             }
 
-            if($member -is [System.Management.Automation.PSScriptMethod]) {
-                if(-not $this._originalClass.__Methods.ContainsKey($MemberName)) {
-                    throw (new-object PSMockException("Method with name: $memberName cannot be found to mock!"))
-                }
+            $mockMethodInfo = New-PSClassInstance 'PSClass.MockMethodInfo' -ArgumentList @(
+                $this,
+                $MethodName
+            )
 
-                Guard-ArgumentValid 'returnObjectOrMethodDefinition' -Test ($returnObjectOrMethodDefinition -is [Scriptblock])
-
-                $methodToMockScript = $this._originalClass.__Methods[$MemberName].PSScriptMethod.Script
-
-                try {
-                    Assert-ScriptBlockParametersEqual $methodToMockScript $returnObjectOrMethodDefinition
-                } catch {
-                    $msg = "Unable to mock method: {0}" -f $MemberName
-                    $exception = (new-object PSMockException($msg, $_))
-                    throw $exception
-                }
-
-                # add the actual mocked script to the mock internals
-                $mockMethodInfoClass = Get-PSClass 'PSClass.MockMethodInfo'
-                $this._mockedMethods[$MemberName] = $mockMethodInfoClass.New($this, $MemberName, $returnObjectOrMethodDefinition)
-
-                # replace the method script in the class we are to mock with a call to the mocked script
-                # because we are doing a bit of redirection, it allows us to capture information about each method call
-                $scriptBlockText = [string]::Format('$this.____mock._mockedMethods[''{0}''].InvokeMethodScript($Args)', $MemberName)
-                $mockedMethodScript = [ScriptBlock]::Create($scriptBlockText)
-
-                $member = new-object management.automation.PSScriptMethod $MemberName,$mockedMethodScript
-                $this.Object.psobject.methods.remove($MemberName)
-                [Void]$this.Object.psobject.methods.add($member)
-            }
-
-            if($member -is [System.Management.Automation.PSNoteProperty] `
-                -or $member -is [System.Management.Automation.PSScriptProperty]) {
-
-                if(-not $this._originalClass.__Properties.ContainsKey($MemberName) -and `
-                    -not $this._originalClass.__Notes.ContainsKey($MemberName)) {
-                    throw (new-object PSMockException("Note or Property with name: $MemberName cannot be found to mock!"))
-                }
-
-                $originalProperty = $this.Object.psobject.properties.Item($MemberName)
-
-                $getter = { return $returnObjectOrMethodDefinition }.GetNewClosure()
-
-                if($callbackValue -eq $null) {
-                    $setter = {}
-                } else {
-                    $setter = {param($a) $callbackValue.Value = $a}.GetNewClosure()
-                }
-
-                $member = new-object management.automation.PSScriptProperty $MemberName,$getter,$setter
-                $this.Object.psobject.properties.remove($MemberName)
-                [Void]$this.Object.psobject.properties.add($member)
-            }
+            return $mockMethodInfo
         }
 
         method 'Verify' {
@@ -120,6 +104,7 @@ if(-not Get-PSClass 'GpClass.Mock') {
             )
 
             Guard-ArgumentNotNull 'MethodName' $MethodName
+            Guard-ArgumentNotNull 'Expectations' $Expectations
             Guard-ArgumentNotNull 'Times' $Times
 
             $callCountThatMetExpectations = 0;
@@ -148,94 +133,66 @@ if(-not Get-PSClass 'GpClass.Mock') {
             }
 
             if(-not $Times.Verify($callCountThatMetExpectations)) {
-                $Times.GetExceptionMessage
+                #TODO
+                $msg = $Times.GetExceptionMessage()
+                throw $msg
             }
         }
 
         method 'VerifyGet' {
             param (
-                [string]$memberName
-              , [Times]$times = [Times]::AtLeastOnce()
+                [string]$MemberName
+              , [Times]$Times = [Times]::AtLeastOnce()
             )
 
-            Guard-ArgumentNotNull 'memberName' $memberName
-            Guard-ArgumentNotNull 'times' $times
+            Guard-ArgumentNotNull 'MemberName' $MemberName
+            Guard-ArgumentNotNull 'Times' $Times
 
-            $metExpectations = 0;
-            $mockedProperty = $this._mockedProperties[$memberName]
-            if($mockedProperty -eq $null) {
-                throw (new-object PSMockException(
-                    [string]::Format("Unable to verify a note/property [{0}] that has no expectations!",
-                        $memberName)))
-            }
-
-            foreach($invocationArgsCollection in $mockedProperty.Invocations) {
-                $invocationMetExpections = $true
-                if($expectations.Count -ne $invocationArgsCollection.Count) {
-                    $invocationMetExpections = $false
-                }
-                for($i = 0; -lt $invocationArgsCollection.Count; $i++) {
-                    $invocationMetExpections = $expectations[$i].Invoke($invocationArgsCollection[$i])
-                    if(-not $invocationMetExpections) {
-                        break;
-                    }
-                }
-
-                if($invocationMetExpections) {
-                    $metExpectations++
-                }
-            }
+            #TODO
         }
 
         method 'VerifySet' {
             param (
-                [string]$memberName
-              , [Times]$times = [Times]::AtLeastOnce()
+                [string]$MemberName,
+              , [func[object, bool]]$Expectation,
+              , [Times]$Times = [Times]::AtLeastOnce()
             )
 
-            Guard-ArgumentNotNull 'memberName' $memberName
-            Guard-ArgumentNotNull 'times' $times
+            Guard-ArgumentNotNull 'MemberName' $MemberName
+            Guard-ArgumentNotNull 'Expectation' $Expectation
+            Guard-ArgumentNotNull 'Times' $Times
 
-            $metExpectations = 0;
-            $mockedMethod = $this._mockedMethods[$methodName]
-            if($mockedMethod -eq $null) {
-                throw (new-object PSMockException(
-                    [string]::Format("Unable to verify a method [{0}] that has no expectations!",
-                        $methodName)))
-            }
-
-            foreach($invocationArgsCollection in $mockedMethod.Invocations) {
-                $invocationMetExpections = $true
-                if($expectations.Count -ne $invocationArgsCollection.Count) {
-                    $invocationMetExpections = $false
-                }
-                for($i = 0; -lt $invocationArgsCollection.Count; $i++) {
-                    $invocationMetExpections = $expectations[$i].Invoke($invocationArgsCollection[$i])
-                    if(-not $invocationMetExpections) {
-                        break;
-                    }
-                }
-
-                if($invocationMetExpections) {
-                    $metExpectations++
-                }
-            }
+            #TODO
         }
     }
 }
 
-if(-not (Get-PSClass 'PSClass.MockMethodInfo')) {
-    New-PSClass 'PSClass.MockMethodInfo' {
-        note 'PSClassMock'
+if(-not (Get-PSClass 'PSClass.Mock.MethodSetupInfo')) {
+    New-PSClass 'PSClass.Mock.MethodSetupInfo' {
+        note 'Mock'
         note 'Name'
-        note 'Script'
+        note 'SetupScript'
+        note 'Expectations'
         note 'Invocations'
+        note 'CallbackScript'
+        note 'ReturnValue'
+        note 'ExceptionToThrow'
 
         constructor {
-            param($psClassMock, $name, $script = {})
-            $this.PSClassMock = $psClassMock
-            $this.Name = $name
-            $this.Script = $script
+            param (
+                $Mock,
+                $Name,
+                $SetupScript = {},
+                [func[object, bool][]]$Expectations = (New-Object 'func[object, bool][]'(0))
+            )
+
+            $this.Mock = $Mock
+            $this.Name = $Name
+            $this.SetupScript = $SetupScript
+            $this.Expections = $Expectations
+            $this.ReturnValue = $null
+            $this.ExceptionToThrow = $null
+            [Action]$this.CallbackAction = {}
             $this.Invocations = (New-Object System.Collections.ArrayList)
         }
 
@@ -246,21 +203,52 @@ if(-not (Get-PSClass 'PSClass.MockMethodInfo')) {
 
             $p1, $p2, $p3, $p4, $p5, $p6, $p7, $p8, $p9, $p10 = $theArgs
             switch($theArgs.Count) {
-                0 {  return $this.Script.InvokeReturnAsIs() }
-                1 {  return $this.Script.InvokeReturnAsIs($p1) }
-                2 {  return $this.Script.InvokeReturnAsIs($p1, $p2) }
-                3 {  return $this.Script.InvokeReturnAsIs($p1, $p2, $p3) }
-                4 {  return $this.Script.InvokeReturnAsIs($p1, $p2, $p3, $p4) }
-                5 {  return $this.Script.InvokeReturnAsIs($p1, $p2, $p3, $p4, $p5) }
-                6 {  return $this.Script.InvokeReturnAsIs($p1, $p2, $p3, $p4, $p5, $p6) }
-                7 {  return $this.Script.InvokeReturnAsIs($p1, $p2, $p3, $p4, $p5, $p6, $p7) }
-                8 {  return $this.Script.InvokeReturnAsIs($p1, $p2, $p3, $p4, $p5, $p6, $p7, $p8) }
-                9 {  return $this.Script.InvokeReturnAsIs($p1, $p2, $p3, $p4, $p5, $p6, $p7, $p8, $p9) }
-                10 { return $this.Script.InvokeReturnAsIs($p1, $p2, $p3, $p4, $p5, $p6, $p7, $p8, $p9, $p10) }
+                0 {  return $this.SetupScript.InvokeReturnAsIs() }
+                1 {  return $this.SetupScript.InvokeReturnAsIs($p1) }
+                2 {  return $this.SetupScript.InvokeReturnAsIs($p1, $p2) }
+                3 {  return $this.SetupScript.InvokeReturnAsIs($p1, $p2, $p3) }
+                4 {  return $this.SetupScript.InvokeReturnAsIs($p1, $p2, $p3, $p4) }
+                5 {  return $this.SetupScript.InvokeReturnAsIs($p1, $p2, $p3, $p4, $p5) }
+                6 {  return $this.SetupScript.InvokeReturnAsIs($p1, $p2, $p3, $p4, $p5, $p6) }
+                7 {  return $this.SetupScript.InvokeReturnAsIs($p1, $p2, $p3, $p4, $p5, $p6, $p7) }
+                8 {  return $this.SetupScript.InvokeReturnAsIs($p1, $p2, $p3, $p4, $p5, $p6, $p7, $p8) }
+                9 {  return $this.SetupScript.InvokeReturnAsIs($p1, $p2, $p3, $p4, $p5, $p6, $p7, $p8, $p9) }
+                10 { return $this.SetupScript.InvokeReturnAsIs($p1, $p2, $p3, $p4, $p5, $p6, $p7, $p8, $p9, $p10) }
                 default {
                     throw (new-object PSMockException("PSClassMock does not support more than 10 arguments for a method mock."))
                 }
             }
+        }
+
+        method 'CallBack' {
+            param (
+                [Action]$Action
+            )
+
+            Guard-ArgumentNotNull 'Action' $Action
+
+            $this.CallBackAction = $Action
+            return $this
+        }
+
+        method 'Returns' {
+            param (
+                [Object]$Value
+            )
+
+            $this.ReturnValue = $Value
+            return $this
+        }
+
+        method 'Throws' {
+            param (
+                [Exception]$Exception
+            )
+
+            Guard-ArgumentNotNull 'Exception' $Exception
+
+            $this.ExceptionToThrow = $Exception
+            return $this
         }
     }
 }
