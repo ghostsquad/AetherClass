@@ -37,6 +37,10 @@ Describe "New-PSClassMock" {
             { $mock.Object.foo() } | Should Not Throw
         }
 
+        It 'Can provide multiple setups' {
+
+        }
+
         It "Given -Strict, No Expectation, should throw PsMockException" {
             $mock = New-PSClassMock $testClass -Strict
 

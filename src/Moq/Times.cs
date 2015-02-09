@@ -2,6 +2,8 @@
     using System;
     using System.Globalization;
 
+    using GpClass.Properties;
+
     /// <include file='Times.xdoc' path='docs/doc[@for="Times"]/*'/>
     public struct Times {
         #region Fields

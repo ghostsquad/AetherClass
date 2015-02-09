@@ -4,6 +4,8 @@ namespace GpClass.Moq {
     using System.Globalization;
     using System.Linq.Expressions;
 
+    using GpClass.Properties;
+
     /// <summary>
     /// The guard.
     /// </summary>

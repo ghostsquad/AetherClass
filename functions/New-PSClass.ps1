@@ -127,6 +127,8 @@ function New-PSClass {
     Attach-PSNote $class __BaseClass $Inherit
     Attach-PSNote $class __ConstructorScript
 
+    $class.psobject.TypeNames.Insert(0, 'GpClass.PSClassDefinition');
+
     # This is how the caller can create a new instance of this class
     Attach-PSScriptMethod $class "New" {
         if($this.__BaseClass -ne $null) {
@@ -154,7 +156,6 @@ function New-PSClass {
     Attach-PSScriptMethod $class "Dispose" {
         $Global:__PSClassDefinitions__.Remove($fixtureClass.__ClassName)
     }
-
 
     # invoking the scriptblock directly without first converting it to a string
     # does not reliably use the current context, thus the internal methods:
@@ -263,49 +264,6 @@ function PSClass_RunConstructor {
             throw (new-object PSClassException("PSClass does not support more than 10 arguments for a constructor."))
         }
     }
-}
-
-if (-not ([System.Management.Automation.PSTypeName]'PSClassException').Type)
-{
-    Add-Type -WarningAction Ignore -TypeDefinition @"
-    using System;
-    using System.Management.Automation;
-
-    public class PSClassException : Exception {
-        public ErrorRecord ErrorRecord { get; private set; }
-
-        public PSClassException(string message)
-            : base(message)
-        {
-        }
-
-        public PSClassException(string message, ErrorRecord errorRecord)
-            : base(message)
-        {
-            this.ErrorRecord = errorRecord;
-        }
-
-        public PSClassException(string message, Exception inner)
-            : base(message, inner)
-        {
-        }
-    }
-"@
-}
-
-if (-not ([System.Management.Automation.PSTypeName]'PSClassTypeAttribute').Type)
-{
-    Add-Type -WarningAction Ignore -TypeDefinition @"
-        using System;
-
-        public class PSClassTypeAttribute : Attribute {
-            public string Name { get; set; }
-
-            public PSClassTypeAttribute(string name) {
-                this.Name = name;
-            }
-        }
-"@
 }
 
 if (-not (test-path variable:\Global:__PSClassDefinitions__)) {

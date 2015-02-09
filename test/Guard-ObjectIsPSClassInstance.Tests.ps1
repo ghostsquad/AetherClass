@@ -2,14 +2,14 @@ $here = Split-Path -Parent $MyInvocation.MyCommand.Path
 # here : /branch/tests/Poshbox.Test
 . "$here\..\TestCommon.ps1"
 
-Describe 'Guard-ArgumentIsPSClass' {
+Describe 'Guard-ArgumentIsPSClassInstance' {
     Context 'Given an object derived from a PSClass' {
         It 'Does not throw if same PSClass is provided' {
             $className = [Guid]::NewGuid().ToString()
             $testClass = New-PSClass $className {} -PassThru
             $testObject = $testClass.New()
 
-            Guard-ArgumentIsPSClass 'testArg' $testObject $testClass
+            Guard-ArgumentIsPSClassInstance 'testArg' $testObject $testClass
         }
 
         It 'Does not throw if same PSClassName is provided' {
@@ -17,7 +17,7 @@ Describe 'Guard-ArgumentIsPSClass' {
             $testClass = New-PSClass $className {} -PassThru
             $testObject = $testClass.New()
 
-            Guard-ArgumentIsPSClass 'testArg' $testObject $className
+            Guard-ArgumentIsPSClassInstance 'testArg' $testObject $className
         }
 
         It 'Does not throw object is a derived version of the PSClass provided' {
@@ -28,7 +28,7 @@ Describe 'Guard-ArgumentIsPSClass' {
 
             $derivedObject = $derivedClass.New()
 
-            Guard-ArgumentIsPSClass 'testArg' $derivedObject $baseClass
+            Guard-ArgumentIsPSClassInstance 'testArg' $derivedObject $baseClass
         }
 
         It 'Throws if object is less derived than PSClass' {
@@ -39,7 +39,7 @@ Describe 'Guard-ArgumentIsPSClass' {
 
             $baseObject = $baseClass.New()
 
-            { Guard-ArgumentIsPSClass 'testArg' $baseObject $derivedClass } | Should Throw
+            { Guard-ArgumentIsPSClassInstance 'testArg' $baseObject $derivedClass } | Should Throw
         }
 
         It 'Throws if object was not created by PSClass' {
@@ -47,7 +47,7 @@ Describe 'Guard-ArgumentIsPSClass' {
             $className = [Guid]::NewGuid().ToString()
             $baseClass = New-PSClass $className {} -PassThru
 
-            { Guard-ArgumentIsPSClass 'testArg' $object $derivedClass } | Should Throw
+            { Guard-ArgumentIsPSClassInstance 'testArg' $object $derivedClass } | Should Throw
         }
 
         It 'Throws if object is not the same class, using className' {
@@ -59,7 +59,7 @@ Describe 'Guard-ArgumentIsPSClass' {
 
             $testObject = $testClass.New()
 
-            { Guard-ArgumentIsPSClass 'testArg' $testObject $otherClassName } | Should Throw
+            { Guard-ArgumentIsPSClassInstance 'testArg' $testObject $otherClassName } | Should Throw
         }
 
         It 'Throws if object is not the same class, using PSClass' {
@@ -71,7 +71,7 @@ Describe 'Guard-ArgumentIsPSClass' {
 
             $testObject = $testClass.New()
 
-            { Guard-ArgumentIsPSClass 'testArg' $testObject $otherClass } | Should Throw
+            { Guard-ArgumentIsPSClassInstance 'testArg' $testObject $otherClass } | Should Throw
         }
     }
 }

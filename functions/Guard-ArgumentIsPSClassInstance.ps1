@@ -1,7 +1,7 @@
 # Performs a comparison of properties, notes, and methods.
 # Ensures that the inputobject has AT LEAST all the members
 # defined in the PSClass
-function Guard-ArgumentIsPSClass {
+function Guard-ArgumentIsPSClassInstance {
     [cmdletbinding(DefaultParameterSetName='PSClass')]
     param (
         [Parameter(Position=0,ParameterSetName='PSClass')]
@@ -38,7 +38,7 @@ function Guard-ArgumentIsPSClass {
     }
 
     if(-not $foundClassInTypeNames) {
-        throw (New-Object PSClassObjectDoesNotMatchException(
+        throw (New-Object PSClassException(
             ('InputObject does not appear have been created by New-PSClass, as the TypeName: {0} was not found in the objects TypeNames list.' -f $PSClass.__ClassName)))
     }
 
@@ -50,31 +50,11 @@ function Guard-ArgumentIsPSClass {
         # we could go further and compare parameters for method scripts and property getter/setter, but that seems like overkill
         # considering that the PSClass TypeName assertion prior to this
         if ($objectMember -ne $null -and $objectMember.GetType() -ne $classMember.GetType()) {
-            throw (New-Object PSClassObjectDoesNotMatchException(
+            throw (New-Object PSClassException(
                 ('Member type mismatch. Class has member {0} which is {1}, where as the object has a member with the same name which is {2}' -f `
                     $memberName, `
                     $psMemberInfo.GetType(), `
                     $objectMember.GetType())))
         }
     }
-}
-
-if (-not ([System.Management.Automation.PSTypeName]'PSClassObjectDoesNotMatchException').Type)
-{
-    Add-Type -WarningAction Ignore -TypeDefinition @"
-    using System;
-    using System.Management.Automation;
-
-    public class PSClassObjectDoesNotMatchException : Exception {
-        public PSClassObjectDoesNotMatchException(string message)
-            : base(message)
-        {
-        }
-
-        public PSClassObjectDoesNotMatchException(string message, Exception inner)
-            : base(message, inner)
-        {
-        }
-    }
-"@
 }
