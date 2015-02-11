@@ -2,6 +2,8 @@ function Setup-MockCallBack {
     [cmdletbinding()]
     param (
         [parameter(ValueFromPipeline)]
-        [psobject]$Mock
+        [psobject]$SetupInfo
     )
+
+    Guard-ArgumentIsPSClassInstance 'Mock' $Mock 'GpClass.Mock'
 }

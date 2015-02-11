@@ -214,11 +214,23 @@ if(-not (Get-PSClass 'GpClass.Mock')) {
     }
 }
 
+if(-not (Get-PSClass 'PSClass.Mock.SetupInfo')) {
+    New-PSClass 'PSClass.Mock.SetupInfo' {
+        note 'Name'
+        note 'ReturnValue'
+
+        constructor {
+            param (
+                $Name
+            )
+
+            $this.Name = $Name
+        }
+    }
+}
+
 if(-not (Get-PSClass 'PSClass.Mock.MethodSetupInfo')) {
     New-PSClass 'PSClass.Mock.MethodSetupInfo' {
-        note 'Mock'
-        note 'Name'
-        note 'SetupScript'
         note 'Expectations'
         note 'Invocations'
         note 'CallbackScript'
@@ -227,15 +239,10 @@ if(-not (Get-PSClass 'PSClass.Mock.MethodSetupInfo')) {
 
         constructor {
             param (
-                $Mock,
                 $Name,
-                $SetupScript = {},
                 [func[object, bool][]]$Expectations = (New-Object 'func[object, bool][]'(0))
             )
 
-            $this.Mock = $Mock
-            $this.Name = $Name
-            $this.SetupScript = $SetupScript
             $this.Expections = $Expectations
             $this.ReturnValue = $null
             $this.ExceptionToThrow = $null
