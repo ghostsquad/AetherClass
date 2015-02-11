@@ -127,25 +127,30 @@ function New-PSClass {
     Attach-PSNote $class __BaseClass $Inherit
     Attach-PSNote $class __ConstructorScript
 
-    # This is how the caller can create a new instance of this class
-    Attach-PSScriptMethod $class "New" {
+    Attach-PSScriptMethod $class '__New' {
         if($this.__BaseClass -ne $null) {
-            if($args.count -gt 10) {
-                throw (new-object PSClassException("PSClass does not support more than 10 arguments for a constructor."))
-            }
-
-            $private:instance = New-PSClassInstance $this.__BaseClass.__ClassName -ArgumentList $args
+            $private:instance = $this.__BaseClass.__New()
         }
         else {
             $private:instance = New-PSObject
         }
 
         $instance.psobject.TypeNames.Insert(0, $this.__ClassName);
-
         PSClass_AttachMembersToInstanceObject $instance $this
 
+        return $instance
+    }
+
+    # This is how the caller can create a new instance of this class
+    Attach-PSScriptMethod $class "New" {
+        if($args.count -gt 10) {
+            throw (new-object PSClassException("PSClass does not support more than 10 arguments for a constructor."))
+        }
+
+        $private:instance = $this.__New()
+
         if($this.__ConstructorScript -ne $null) {
-            PSClass_RunConstructor $instance $this.__ConstructorScript $args
+            PSClass_RunConstructor $basePsuedoObj $instance $this.__ConstructorScript $args
         }
 
         return $instance
@@ -240,14 +245,14 @@ function PSClass_AttachMembersToInstanceObject {
 
 function PSClass_RunConstructor {
     param (
+        [PSObject]$Base,
         [PSObject]$This,
-        [ScriptBlock]$Constructor,
-        [Object]$ConstructorParameters
+        [ScriptBlock]$Constructor
     )
 
     $private:p1, $private:p2, $private:p3, $private:p4, $private:p5, $private:p6, `
-        $private:p7, $private:p8, $private:p9, $private:p10 = $ConstructorParameters
-    switch($ConstructorParameters.Count) {
+        $private:p7, $private:p8, $private:p9, $private:p10 = $args
+    switch($args.Count) {
         0 {  [Void]($Constructor.InvokeReturnAsIs()) }
         1 {  [Void]($Constructor.InvokeReturnAsIs($p1)) }
         2 {  [Void]($Constructor.InvokeReturnAsIs($p1, $p2)) }
