@@ -1,4 +1,4 @@
-if(-not Get-PSClass 'GpClass.Mock') {
+if(-not (Get-PSClass 'GpClass.Mock')) {
     New-PSClass 'GpClass.Mock' {
         note '_strict' ([bool]$Strict)
         note '_originalClass'
@@ -98,9 +98,10 @@ if(-not Get-PSClass 'GpClass.Mock') {
 
         method 'Verify' {
             param (
-                [string]$MethodName
-              , [func[object, bool][]]$Expectations = (New-Object 'func[object, bool][]'(0))
-              , [Times]$Times = [Times]::AtLeastOnce()
+                [string]$MethodName,
+                [func[object, bool][]]$Expectations = (New-Object 'func[object, bool][]'(0)),
+                [Times]$Times = [Times]::AtLeastOnce(),
+                [string]$FailMessage
             )
 
             Guard-ArgumentNotNull 'MethodName' $MethodName
@@ -134,15 +135,15 @@ if(-not Get-PSClass 'GpClass.Mock') {
 
             if(-not $Times.Verify($callCountThatMetExpectations)) {
                 #TODO
-                $msg = $Times.GetExceptionMessage()
+                $msg = $Times.GetExceptionMessage($FailMessage, )
                 throw $msg
             }
         }
 
         method 'VerifyGet' {
             param (
-                [string]$MemberName
-              , [Times]$Times = [Times]::AtLeastOnce()
+                [string]$MemberName,
+                [Times]$Times = [Times]::AtLeastOnce()
             )
 
             Guard-ArgumentNotNull 'MemberName' $MemberName
@@ -154,8 +155,8 @@ if(-not Get-PSClass 'GpClass.Mock') {
         method 'VerifySet' {
             param (
                 [string]$MemberName,
-              , [func[object, bool]]$Expectation,
-              , [Times]$Times = [Times]::AtLeastOnce()
+                [func[object, bool]]$Expectation,
+                [Times]$Times = [Times]::AtLeastOnce()
             )
 
             Guard-ArgumentNotNull 'MemberName' $MemberName
@@ -163,6 +164,52 @@ if(-not Get-PSClass 'GpClass.Mock') {
             Guard-ArgumentNotNull 'Times' $Times
 
             #TODO
+        }
+
+        method _ThrowVerifyException {
+            param (
+                [string]$MemberName,
+                [string]$FailMessage,
+                [func[object, bool][]]$Expectations = (New-Object 'func[object, bool][]'(0)),
+                [Ienumerable[psobject]]$Setups,
+                [Ienumerable[psobject]]$ActualCalls,
+                [Times]$Times,
+                [int]$CallCount
+            )
+
+            $Expression = $MemberName + "(" + $this._ConvertExpectationsToExpressionString($Expectations) + ")"
+
+            [string]$msg = $Times.GetExceptionMessage($FailMessage, $Expression, $CallCount) + `
+                [environment]::NewLine + $this._FormatSetupsInfo($Setups) + `
+                [environment]::NewLine + $this._FormatInvocations($ActualCalls)
+
+            throw (New-Object PSMockException
+        }
+
+        method _FormatSetupsInfo {
+
+        }
+
+        method _FormatCallCount {
+
+        }
+
+        method _FormatInvocations {
+
+        }
+
+        method _ConvertExpectationsToExpressionString {
+            [cmdletbinding()]
+            param (
+                [func[object, bool][]]$Expectations = (New-Object 'func[object, bool][]'(0))
+            )
+
+            $FuncStrings = @()
+            foreach($expectation in $Expectations) {
+                $FuncStrings += $expectation.Target.Constants[0].ToString().Trim("`n").Trim()
+            }
+
+            return [string]::Join($FuncStrings, ", ")
         }
     }
 }

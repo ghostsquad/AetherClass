@@ -4,10 +4,15 @@ function New-PSClass {
       , [scriptblock]$Definition
       , [object]$Inherit
       , [switch]$PassThru
+      , [switch]$IfNotExists
     )
 
     Guard-ArgumentNotNullOrEmpty 'ClassName' $ClassName
     Guard-ArgumentNotNull 'Definition' $Definition
+
+    if($IfNotExists -and (Get-PSClass $ClassName)) {
+        return
+    }
 
     if($Inherit -ne $null) {
         if($Inherit -is [string]) {

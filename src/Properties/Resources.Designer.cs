@@ -480,15 +480,6 @@ namespace GpClass.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Invalid setup on a non-virtual (overridable in VB) member: {0}.
-        /// </summary>
-        public static string SetupOnNonOverridableMember {
-            get {
-                return ResourceManager.GetString("SetupOnNonOverridableMember", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Type {0} does not implement required interface {1}.
         /// </summary>
         public static string TypeNotImplementInterface {
@@ -498,7 +489,7 @@ namespace GpClass.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Type {0} does not from required type {1}.
+        ///   Looks up a localized string similar to Type {0} does not inherit from required type {1}.
         /// </summary>
         public static string TypeNotInheritFromType {
             get {
@@ -529,66 +520,12 @@ namespace GpClass.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Only property accesses are supported in intermediate invocations on a setup. Unsupported expression {0}..
-        /// </summary>
-        public static string UnsupportedIntermediateExpression {
-            get {
-                return ResourceManager.GetString("UnsupportedIntermediateExpression", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Expression contains intermediate property access {0}.{1} which is of type {2} and cannot be mocked. Unsupported expression {3}..
-        /// </summary>
-        public static string UnsupportedIntermediateType {
-            get {
-                return ResourceManager.GetString("UnsupportedIntermediateType", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Setter expression cannot use argument matchers that receive parameters..
-        /// </summary>
-        public static string UnsupportedMatcherParamsForSetter {
-            get {
-                return ResourceManager.GetString("UnsupportedMatcherParamsForSetter", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Member {0} is not supported for protected mocking..
-        /// </summary>
-        public static string UnsupportedMember {
-            get {
-                return ResourceManager.GetString("UnsupportedMember", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Setter expression can only use static custom matchers..
-        /// </summary>
-        public static string UnsupportedNonStaticMatcherForSetter {
-            get {
-                return ResourceManager.GetString("UnsupportedNonStaticMatcherForSetter", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to The following setups were not matched:
         ///{0}.
         /// </summary>
         public static string VerficationFailed {
             get {
                 return ResourceManager.GetString("VerficationFailed", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Invalid verify on a non-virtual (overridable in VB) member: {0}.
-        /// </summary>
-        public static string VerifyOnNonVirtualMember {
-            get {
-                return ResourceManager.GetString("VerifyOnNonVirtualMember", resourceCulture);
             }
         }
     }

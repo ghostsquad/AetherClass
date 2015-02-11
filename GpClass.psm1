@@ -27,13 +27,19 @@ $here = Split-Path -Parent $MyInvocation.MyCommand.Path
 . $here\functions\Setup-MockCallback.ps1
 . $here\functions\Setup-MockReturn.ps1
 
-[Void](Add-TypeAccelerator -Name Times -Type ([GpClass.Moq.Times]))
-[Void](Add-TypeAccelerator -Name Range -Type ([GpClass.Moq.Range]))
+# All
 [Void](Add-TypeAccelerator -Name RegexOptions -Type ([System.Text.RegularExpressions.RegexOptions]))
+[Void](Add-TypeAccelerator -Name Resources -Type ([GpClass.Properties.Resources]))
+
+# PSClass
 [Void](Add-TypeAccelerator -Name PSClassException -Type ([GpClass.PSClassException]))
-[Void](Add-TypeAccelerator -Name PSMockException -Type ([GpClass.PSMockException]))
 [Void](Add-TypeAccelerator -Name PSClassTypeAttribute -Type ([GpClass.PSClassTypeAttribute]))
+
+# PSClassMock
 [Void](Add-TypeAccelerator -Name SetupType -Type ([GpClass.Mock.SetupType]))
+[Void](Add-TypeAccelerator -Name Times -Type ([GpClass.Mock.Times]))
+[Void](Add-TypeAccelerator -Name Range -Type ([GpClass.Mock.Range]))
+[Void](Add-TypeAccelerator -Name PSMockException -Type ([GpClass.Mock.PSMockException]))
 
 Export-ModuleMember -Function ItIs
 Export-ModuleMember -Function *-*

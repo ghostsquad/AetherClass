@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <Import Project="$(MSBuildExtensionsPath64)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath64)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
@@ -43,11 +43,11 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Moq\Guard.cs" />
-    <Compile Include="Moq\Range.cs">
+    <Compile Include="Guard.cs" />
+    <Compile Include="Mock\Range.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Moq\Times.cs" />
+    <Compile Include="Mock\Times.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
@@ -56,7 +56,7 @@
     </Compile>
     <Compile Include="PSClassException.cs" />
     <Compile Include="PSClassTypeAttribute.cs" />
-    <Compile Include="PSMockException.cs" />
+    <Compile Include="Mock\PSMockException.cs" />
     <Compile Include="Mock\SetupType.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -65,14 +65,20 @@
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <None Include="Resources\GpClass.psm1" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it.
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">
   </Target>
   -->
-  <Import Project="$(MSBuildExtensionsPath)\ExtensionPack\MSBuild.ExtensionPack.tasks" />
+  <!--To Install MSBuild ExtensionPack check this URL for current releases. Look for the MSI for version 4.0.
+  https://github.com/mikefourie/MSBuildExtensionPack/releases
+  We are using the default install path as documented here:
+  https://github.com/mikefourie/MSBuildExtensionPack/wiki/Installation -->
+  <Import Project="$(MSBuildExtensionsPath64)\ExtensionPack\4.0\MSBuild.ExtensionPack.tasks" />
   <Target Name="AfterBuild">
     <ItemGroup>
       <OutputFiles Include="$(TargetName).dll" />
