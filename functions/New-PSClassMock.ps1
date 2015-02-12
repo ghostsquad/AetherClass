@@ -71,27 +71,27 @@ if(-not (Get-PSClass 'GpClass.Mock')) {
                 $this._mockedProperties[$propertyName] = New-Object System.Collections.Arraylist
                 $mockedPropertyGetScript = {
                     $propertySetupInfoCollection = $mockDefinition._mockedProperties[$propertyName]
-                    foreach($propertySetupInfo
-
-                    if($propertySetupInfoCollection.Count -gt 0) {
+                    $condition = {ObjectIs-PSClassInstance $_ 'PSClass.Mock.PropertyGetSetupInfo'}
+                    if(Where-Any -InputObject $propertySetupInfoCollection -Condition $condition) {
                         [Void]$propertySetupInfo.Gets++
                         return $propertySetupInfo.ReturnValue
                     }
 
                     if($Strict) {
-                        throw (new-object PSMockException("This Mock is strict and no expectation was set for method ...."))
+                        throw (new-object PSMockException("This Mock is strict and no expectation was set for method $propertyName"))
                     }
                 }.GetNewClosure()
 
                 $mockedPropertySetScript = {
                     $propertySetupInfoCollection = $mockDefinition._mockedProperties[$propertyName]
-                    if($propertySetupInfoCollection.Count -gt 0) {
-                        [Void]$propertySetupInfo.Gets++
+                    $condition = {ObjectIs-PSClassInstance $_ 'PSClass.Mock.PropertySetSetupInfo'}
+                    if(Where-Any -InputObject $propertySetupInfoCollection -Condition $condition) {
+                        [Void]$propertySetupInfo.Sets.Add($args[0])
                         return $propertySetupInfo.ReturnValue
                     }
 
                     if($Strict) {
-                        throw (new-object PSMockException("This Mock is strict and no expectation was set for method ...."))
+                        throw (new-object PSMockException("This Mock is strict and no expectation was set for property $propertyName"))
                     }
                 }.GetNewClosure()
 
@@ -277,7 +277,7 @@ if(-not (Get-PSClass 'PSClass.Mock.SetupInfo')) {
     }
 }
 
-if(-not (Get-PSClass 'PSClass.Mock.PropertySetupInfo')) {
+if(-not (Get-PSClass 'PSClass.Mock.PropertySetSetupInfo')) {
     New-PSClass 'PSClass.Mock.PropertySetSetupInfo' -Inherit 'PSClass.Mock.SetupInfo' {
         note 'Invocations'
 
@@ -298,7 +298,7 @@ if(-not (Get-PSClass 'PSClass.Mock.PropertySetupInfo')) {
     }
 }
 
-if(-not (Get-PSClass 'PSClass.Mock.PropertySetupInfo')) {
+if(-not (Get-PSClass 'PSClass.Mock.PropertyGetSetupInfo')) {
     New-PSClass 'PSClass.Mock.PropertyGetSetupInfo' -Inherit 'PSClass.Mock.SetupInfo' {
         note 'Invocations' 0
 
