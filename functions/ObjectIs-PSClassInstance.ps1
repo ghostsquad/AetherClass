@@ -22,6 +22,7 @@ function ObjectIs-PSClassInstance {
     }
 
     if($InputObject -eq $null) {
+        Write-Debug ('InputObject is null')
         return $false
     }
 

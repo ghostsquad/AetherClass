@@ -1,6 +1,6 @@
 if(-not (Get-PSClass 'GpClass.Mock')) {
     New-PSClass 'GpClass.Mock' {
-        note '_strict' ([bool]$Strict)
+        note '_strict' $false
         note '_originalClass'
         note '_mockedMethods'
         note '_mockedProperties'
@@ -19,27 +19,27 @@ if(-not (Get-PSClass 'GpClass.Mock')) {
             $this._mockedProperties = @{}
 
             $theMockObject = New-PSObject
-            Attach-PSNote $theMockObject '____mock' $this
+            Attach-PSNote $theMockObject '____mock____' $this
 
             $mockDefinition = $this
 
             foreach($methodName in $Class.__Methods.Keys) {
                 $this._mockedMethods[$methodName] = New-Object System.Collections.Arraylist
+
                 $mockedMethodScript = {
                     #because $this & $args are automatic variables,
                     #the automatic version of the variable will
                     #override the any variable with the same name that may be captured from GetNewClosure()
-                    $methodSetupInfoCollection = $mockDefinition._mockedMethods[$methodName]
+                    $methodSetupInfoCollection = $this.____mock____._mockedMethods[$methodName]
                     foreach($methodSetupInfo in $methodSetupInfoCollection) {
-                        $invocationMetExpections = $true
-                        if($methodSetupInfo.Expectations.Count -ne $Args.Count) {
-                            $invocationMetExpections = $false
-                        }
+                        $invocationMetExpections = $false
 
-                        for($i = 0; -lt $Args.Count; $i++) {
-                            $invocationMetExpections = $methodSetupInfo.Expectations[$i].Invoke($Args[$i])
-                            if(-not $invocationMetExpections) {
-                                break;
+                        if($methodSetupInfo.Expectations.Count -eq $Args.Count) {
+                            for($i = 0; $i -lt $Args.Count; $i++) {
+                                $invocationMetExpections = $methodSetupInfo.Expectations[$i].Invoke($Args[$i])
+                                if(-not $invocationMetExpections) {
+                                    break;
+                                }
                             }
                         }
 
@@ -56,7 +56,7 @@ if(-not (Get-PSClass 'GpClass.Mock')) {
                     }
 
                     if($Strict) {
-                        throw (new-object PSMockException("This Mock is strict and no expectation was set for method ...."))
+                        throw (new-object PSMockException(("This Mock is strict and no expectations were set for method {0}" -f $methodName)))
                     }
                 }.GetNewClosure()
 
@@ -70,23 +70,16 @@ if(-not (Get-PSClass 'GpClass.Mock')) {
             foreach($propertyName in $notesAndPropertyKeys) {
                 $this._mockedProperties[$propertyName] = New-Object System.Collections.Arraylist
                 $mockedPropertyGetScript = {
+                    #because $this & $args are automatic variables,
+                    #the automatic version of the variable will
+                    #override the any variable with the same name that may be captured from GetNewClosure()
                     $propertySetupInfoCollection = $mockDefinition._mockedProperties[$propertyName]
-                    $condition = {ObjectIs-PSClassInstance $_ 'PSClass.Mock.PropertyGetSetupInfo'}
+                    $condition = {ObjectIs-PSClassInstance $_ 'PSClass.Mock.PropertySetupInfo'}
                     if(Where-Any -InputObject $propertySetupInfoCollection -Condition $condition) {
-                        [Void]$propertySetupInfo.Gets++
-                        return $propertySetupInfo.ReturnValue
-                    }
-
-                    if($Strict) {
-                        throw (new-object PSMockException("This Mock is strict and no expectation was set for method $propertyName"))
-                    }
-                }.GetNewClosure()
-
-                $mockedPropertySetScript = {
-                    $propertySetupInfoCollection = $mockDefinition._mockedProperties[$propertyName]
-                    $condition = {ObjectIs-PSClassInstance $_ 'PSClass.Mock.PropertySetSetupInfo'}
-                    if(Where-Any -InputObject $propertySetupInfoCollection -Condition $condition) {
-                        [Void]$propertySetupInfo.Sets.Add($args[0])
+                        $InvocationInfo = New-PSClassInstance 'GpClass.Mock.InvocationInfo' -ArgumentList @(
+                            [InvocationType]::PropertyGet
+                        )
+                        [Void]$propertySetupInfo.Invocations.Add($InvocationInfo)
                         return $propertySetupInfo.ReturnValue
                     }
 
@@ -95,7 +88,28 @@ if(-not (Get-PSClass 'GpClass.Mock')) {
                     }
                 }.GetNewClosure()
 
-                Attach-PSProperty $theMockObject $propertyName $mockedPropertyGetScript $mockedPropertySetScript
+                $mockedPropertySetScript = {
+                    #because $this & $args are automatic variables,
+                    #the automatic version of the variable will
+                    #override the any variable with the same name that may be captured from GetNewClosure()
+                    $propertySetupInfoCollection = $mockDefinition._mockedProperties[$propertyName]
+                    $condition = {ObjectIs-PSClassInstance $_ 'PSClass.Mock.PropertySetupInfo'}
+                    if(Where-Any -InputObject $propertySetupInfoCollection -Condition $condition) {
+                        $InvocationInfo = New-PSClassInstance 'GpClass.Mock.InvocationInfo' -ArgumentList @(
+                            [InvocationType]::PropertySet,
+                            $Args[0]
+                        )
+                        [Void]$propertySetupInfo.Invocations.Add($InvocationInfo)
+                        return $propertySetupInfo.ReturnValue
+                    }
+
+                    if($Strict) {
+                        throw (new-object PSMockException("This Mock is strict and no expectation was set for property $propertyName"))
+                    }
+                }.GetNewClosure()
+
+                #Attach-PSProperty $theMockObject $propertyName $mockedPropertyGetScript $mockedPropertySetScript
+                Attach-PSProperty $theMockObject $propertyName {} {}
             }
 
             $this.Object = $theMockObject
@@ -107,19 +121,30 @@ if(-not (Get-PSClass 'GpClass.Mock')) {
                 [func[object, bool][]]$Expectations = @()
             )
 
-            Guard-ArgumentNotNull 'MethodName' $MethodName
-            Guard-ArgumentNotNull 'Expectations' $Expectations
+            return (Setup-Mock -Mock $this -Type 'Method' -Method $MethodName -Expectations $Expectations -PassThru)
+        }
 
-            if(-not $this._originalClass.__Methods.ContainsKey($MethodName)) {
-                throw (new-object PSMockException("Method with name: $MethodName cannot be found to mock!"))
-            }
-
-            $mockMethodInfo = New-PSClassInstance 'PSClass.MockMethodInfo' -ArgumentList @(
-                $this,
-                $MethodName
+        method 'SetupMethod' {
+            param (
+                [string]$MethodName,
+                [func[object, bool][]]$Expectations = @()
             )
 
-            return $mockMethodInfo
+            return (Setup-Mock -Mock $this -Type 'Method' -Method $MethodName -Expectations $Expectations -PassThru)
+        }
+
+        method 'SetupProperty' {
+            param (
+                [string]$PropertyName,
+                [object]$DefaultValue
+            )
+
+            Guard-ArgumentNotNull 'PropertyName' $PropertyName
+            if(-not $this._originalClass.__Notes.ContainsKey($PropertyName) `
+                -and -not $this._originalClass.__Properties.ContainsKey($PropertyName)) {
+
+                throw (new-object PSMockException("Method with name: $MethodName cannot be found to mock!"))
+            }
         }
 
         method 'Verify' {
@@ -147,6 +172,7 @@ if(-not (Get-PSClass 'GpClass.Mock')) {
                 if($Expectations.Count -ne $invocationArgsCollection.Count) {
                     $invocationMetExpections = $false
                 }
+
                 for($i = 0; -lt $invocationArgsCollection.Count; $i++) {
                     $invocationMetExpections = $Expectations[$i].Invoke($invocationArgsCollection[$i])
                     if(-not $invocationMetExpections) {
@@ -161,7 +187,7 @@ if(-not (Get-PSClass 'GpClass.Mock')) {
 
             if(-not $Times.Verify($callCountThatMetExpectations)) {
                 #TODO
-                $msg = $Times.GetExceptionMessage($FailMessage, )
+                $msg = $Times.GetExceptionMessage($FailMessage, $null, $null )
                 throw $msg
             }
         }
@@ -209,7 +235,7 @@ if(-not (Get-PSClass 'GpClass.Mock')) {
                 [environment]::NewLine + $this._FormatSetupsInfo($Setups) + `
                 [environment]::NewLine + $this._FormatInvocations($ActualCalls)
 
-            throw (New-Object PSMockException
+            throw (New-Object PSMockException)
         }
 
         method _FormatSetupsInfo {
@@ -220,7 +246,7 @@ if(-not (Get-PSClass 'GpClass.Mock')) {
 
         }
 
-        method _FormatInvocations {
+        method _FormatInvocationsInfo {
 
         }
 
@@ -240,11 +266,30 @@ if(-not (Get-PSClass 'GpClass.Mock')) {
     }
 }
 
+if(-not (Get-PSClass 'PSClass.Mock.InvocationInfo')) {
+    New-PSClass 'PSClass.Mock.InvocationInfo' {
+        note InvocationType
+        note CallArgs
+
+        constructor {
+            param (
+                [InvocationType]$InvocationType,
+                [object[]]$CallArgs
+            )
+
+            $this.InvocationType = $InvocationType
+            $this.CallArgs = $CallArgs
+        }
+    }
+}
+
 if(-not (Get-PSClass 'PSClass.Mock.SetupInfo')) {
     New-PSClass 'PSClass.Mock.SetupInfo' {
         note 'Name'
+        note 'Mock'
         note 'Expectations'
-        note 'CallbackScript'
+        note 'Invocations'
+        note 'CallbackAction'
         note 'ReturnValue'
 
         constructor {
@@ -253,6 +298,10 @@ if(-not (Get-PSClass 'PSClass.Mock.SetupInfo')) {
             )
 
             $this.Name = $Name
+            $this.Expectations = New-Object 'System.Collections.Generic.List[func[object, bool]]'
+            [Action]$this.CallbackAction = {}
+            $this.Invocations = New-Object System.Collections.ArrayList
+            $this.ReturnValue = $null
         }
 
         method 'CallBack' {
@@ -277,31 +326,8 @@ if(-not (Get-PSClass 'PSClass.Mock.SetupInfo')) {
     }
 }
 
-if(-not (Get-PSClass 'PSClass.Mock.PropertySetSetupInfo')) {
-    New-PSClass 'PSClass.Mock.PropertySetSetupInfo' -Inherit 'PSClass.Mock.SetupInfo' {
-        note 'Invocations'
-
-        constructor {
-            param (
-                $Name,
-                [func[object, bool][]]$Expectations = @()
-            )
-
-            Base $Name
-
-            $this.Expectations = New-Object 'System.Collections.Generic.List[func[object, bool]]'
-            [Void]$this.Expectations.Add((ItIs-Any ([object])))
-            [Void]$this.Expectations.AddRange($Expectations)
-            [Action]$this.CallbackAction = {}
-            $this.Invocations = (New-Object System.Collections.ArrayList)
-        }
-    }
-}
-
-if(-not (Get-PSClass 'PSClass.Mock.PropertyGetSetupInfo')) {
-    New-PSClass 'PSClass.Mock.PropertyGetSetupInfo' -Inherit 'PSClass.Mock.SetupInfo' {
-        note 'Invocations' 0
-
+if(-not (Get-PSClass 'PSClass.Mock.PropertySetupInfo')) {
+    New-PSClass 'PSClass.Mock.PropertySetupInfo' -Inherit 'PSClass.Mock.SetupInfo' {
         constructor {
             param (
                 $Name,
@@ -310,6 +336,7 @@ if(-not (Get-PSClass 'PSClass.Mock.PropertyGetSetupInfo')) {
 
             Base $Name
 
+            [Void]$this.Expectations.Add((ItIs-Any ([object])))
             $this.ReturnValue = $DefaultValue
         }
     }
@@ -317,10 +344,6 @@ if(-not (Get-PSClass 'PSClass.Mock.PropertyGetSetupInfo')) {
 
 if(-not (Get-PSClass 'PSClass.Mock.MethodSetupInfo')) {
     New-PSClass 'PSClass.Mock.MethodSetupInfo' -Inherit 'PSClass.Mock.SetupInfo' {
-        note 'Expectations'
-        note 'Invocations'
-        note 'CallbackScript'
-        note 'ReturnValue'
         note 'ExceptionToThrow'
 
         constructor {
@@ -331,12 +354,8 @@ if(-not (Get-PSClass 'PSClass.Mock.MethodSetupInfo')) {
 
             Base $Name
 
-            $this.Expectations = New-Object 'System.Collections.Generic.List[func[object, bool]]'
             [Void]$this.Expectations.AddRange($Expectations)
-            $this.ReturnValue = $null
             $this.ExceptionToThrow = $null
-            [Action]$this.CallbackAction = {}
-            $this.Invocations = (New-Object System.Collections.ArrayList)
         }
 
         method 'InvokeMethodScript' {

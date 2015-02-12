@@ -22,9 +22,9 @@ function Guard-ArgumentIsPSClassInstance {
     Guard-ArgumentNotNull $ArgumentName $InputObject
 
     if($PSCmdlet.ParameterSetName -eq 'PSClassName') {
-        $ObjectIsPSClassInstance = ObjectIs-PSClassInstance -PSClassName $PSClassName
+        $ObjectIsPSClassInstance = ObjectIs-PSClassInstance -InputObject $InputObject -PSClassName $PSClassName
     } else {
-        $ObjectIsPSClassInstance = ObjectIs-PSClassInstance -PSClass $PSClass
+        $ObjectIsPSClassInstance = ObjectIs-PSClassInstance -InputObject $InputObject -PSClass $PSClass
     }
 
     if(-not $ObjectIsPSClassInstance) {

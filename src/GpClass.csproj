@@ -44,6 +44,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Guard.cs" />
+    <Compile Include="Mock\InvocationType.cs" />
     <Compile Include="Mock\Range.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -57,7 +58,6 @@
     <Compile Include="PSClassException.cs" />
     <Compile Include="PSClassTypeAttribute.cs" />
     <Compile Include="Mock\PSMockException.cs" />
-    <Compile Include="Mock\SetupType.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Properties\Resources.resx">

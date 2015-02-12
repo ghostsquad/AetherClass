@@ -5,6 +5,20 @@ $here = Split-Path -Parent $MyInvocation.MyCommand.Path
 
 [Void](Add-Type -Path (Join-Path $here 'GpClass.dll'))
 
+# All
+[Void](Add-TypeAccelerator -Name RegexOptions -Type ([System.Text.RegularExpressions.RegexOptions]))
+[Void](Add-TypeAccelerator -Name Resources -Type ([GpClass.Properties.Resources]))
+
+# PSClass
+[Void](Add-TypeAccelerator -Name PSClassException -Type ([GpClass.PSClassException]))
+[Void](Add-TypeAccelerator -Name PSClassTypeAttribute -Type ([GpClass.PSClassTypeAttribute]))
+
+# PSClassMock
+[Void](Add-TypeAccelerator -Name InvocationType -Type ([GpClass.Mock.InvocationType]))
+[Void](Add-TypeAccelerator -Name Times -Type ([GpClass.Mock.Times]))
+[Void](Add-TypeAccelerator -Name Range -Type ([GpClass.Mock.Range]))
+[Void](Add-TypeAccelerator -Name PSMockException -Type ([GpClass.Mock.PSMockException]))
+
 . $here\functions\Attach-PSClassConstructor.ps1
 . $here\functions\Attach-PSClassMethod.ps1
 . $here\functions\Attach-PSClassNote.ps1
@@ -27,20 +41,6 @@ $here = Split-Path -Parent $MyInvocation.MyCommand.Path
 . $here\functions\Setup-Mock.ps1
 . $here\functions\Setup-MockCallback.ps1
 . $here\functions\Setup-MockReturn.ps1
-
-# All
-[Void](Add-TypeAccelerator -Name RegexOptions -Type ([System.Text.RegularExpressions.RegexOptions]))
-[Void](Add-TypeAccelerator -Name Resources -Type ([GpClass.Properties.Resources]))
-
-# PSClass
-[Void](Add-TypeAccelerator -Name PSClassException -Type ([GpClass.PSClassException]))
-[Void](Add-TypeAccelerator -Name PSClassTypeAttribute -Type ([GpClass.PSClassTypeAttribute]))
-
-# PSClassMock
-[Void](Add-TypeAccelerator -Name SetupType -Type ([GpClass.Mock.SetupType]))
-[Void](Add-TypeAccelerator -Name Times -Type ([GpClass.Mock.Times]))
-[Void](Add-TypeAccelerator -Name Range -Type ([GpClass.Mock.Range]))
-[Void](Add-TypeAccelerator -Name PSMockException -Type ([GpClass.Mock.PSMockException]))
 
 Export-ModuleMember -Function ItIs
 Export-ModuleMember -Function *-*
