@@ -109,7 +109,11 @@ Describe "New-PSClass" {
             } -PassThru
 
             $derivedClassName = [Guid]::NewGuid().ToString()
-            $derivedClass = New-PSClass $derivedClassName -inherit $testClass {} -PassThru
+            $derivedClass = New-PSClass $derivedClassName -inherit $testClass {
+                constructor {
+                    Base $args[0] $args[1]
+                }
+            } -PassThru
 
             $myAObject = New-PSObject @{
                 someProp = (New-PSObject @{
@@ -157,11 +161,11 @@ Describe "New-PSClass" {
             $derivedClassName = [Guid]::NewGuid().ToString()
             $derivedClass = New-PSClass $derivedClassName -inherit $testBaseClass {} -PassThru
 
-            $derived = $derivedClass.New($expectedValue)
+            $derived = $derivedClass.New('something else')
             $derived._foo | Should Be "default"
         }
 
-        It "can call base constructor using $base.constructor()" {
+        It "can call base constructor using function:base" {
             $className = [Guid]::NewGuid().ToString()
             $testBaseClass = New-PSClass $className {
                 note "_foo" "default"

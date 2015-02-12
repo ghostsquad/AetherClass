@@ -127,30 +127,16 @@ function New-PSClass {
     Attach-PSNote $class __BaseClass $Inherit
     Attach-PSNote $class __ConstructorScript
 
-    Attach-PSScriptMethod $class '__New' {
-        if($this.__BaseClass -ne $null) {
-            $private:instance = $this.__BaseClass.__New()
-        }
-        else {
-            $private:instance = New-PSObject
-        }
-
-        $instance.psobject.TypeNames.Insert(0, $this.__ClassName);
-        PSClass_AttachMembersToInstanceObject $instance $this
-
-        return $instance
-    }
-
     # This is how the caller can create a new instance of this class
     Attach-PSScriptMethod $class "New" {
         if($args.count -gt 10) {
             throw (new-object PSClassException("PSClass does not support more than 10 arguments for a constructor."))
         }
 
-        $private:instance = $this.__New()
+        $private:instance = PSClass_InitInstance $this
 
         if($this.__ConstructorScript -ne $null) {
-            PSClass_RunConstructor $basePsuedoObj $instance $this.__ConstructorScript $args
+            PSClass_RunConstructor $instance $args
         }
 
         return $instance
@@ -185,6 +171,10 @@ function PSClass_AttachMembersToInstanceObject {
         [PSObject]$Instance,
         [PSObject]$Class
     )
+
+    if($Instance.psobject.members['__ClassDefinition__'] -eq $null) {
+        Attach-PSNote $Instance __ClassDefinition__ $Class
+    }
 
     # Attach Notes
     foreach($noteName in $Class.__Notes.Keys) {
@@ -243,27 +233,63 @@ function PSClass_AttachMembersToInstanceObject {
     }
 }
 
+function PSClass_InitInstance {
+    param (
+        $Class
+    )
+    if($Class.__BaseClass -ne $null) {
+        $private:instance = PSClass_InitInstance $Class.__BaseClass
+    }
+    else {
+        $private:instance = New-PSObject
+    }
+
+    $instance.psobject.TypeNames.Insert(0, $Class.__ClassName);
+    PSClass_AttachMembersToInstanceObject $instance $Class
+
+    return $instance
+}
+
 function PSClass_RunConstructor {
     param (
-        [PSObject]$Base,
-        [PSObject]$This,
-        [ScriptBlock]$Constructor
+        [PSObject]$This
     )
+
+    function Base {
+        $private:p1, $private:p2, $private:p3, $private:p4, $private:p5, $private:p6, `
+            $private:p7, $private:p8, $private:p9, $private:p10 = $args
+        switch($args.Count) {
+            0 {  [Void]($This.__ClassDefinition__.__BaseClass.__ConstructorScript.InvokeReturnAsIs()) }
+            1 {  [Void]($This.__ClassDefinition__.__BaseClass.__ConstructorScript.InvokeReturnAsIs($p1)) }
+            2 {  [Void]($This.__ClassDefinition__.__BaseClass.__ConstructorScript.InvokeReturnAsIs($p1, $p2)) }
+            3 {  [Void]($This.__ClassDefinition__.__BaseClass.__ConstructorScript.InvokeReturnAsIs($p1, $p2, $p3)) }
+            4 {  [Void]($This.__ClassDefinition__.__BaseClass.__ConstructorScript.InvokeReturnAsIs($p1, $p2, $p3, $p4)) }
+            5 {  [Void]($This.__ClassDefinition__.__BaseClass.__ConstructorScript.InvokeReturnAsIs($p1, $p2, $p3, $p4, $p5)) }
+            6 {  [Void]($This.__ClassDefinition__.__BaseClass.__ConstructorScript.InvokeReturnAsIs($p1, $p2, $p3, $p4, $p5, $p6)) }
+            7 {  [Void]($This.__ClassDefinition__.__BaseClass.__ConstructorScript.InvokeReturnAsIs($p1, $p2, $p3, $p4, $p5, $p6, $p7)) }
+            8 {  [Void]($This.__ClassDefinition__.__BaseClass.__ConstructorScript.InvokeReturnAsIs($p1, $p2, $p3, $p4, $p5, $p6, $p7, $p8)) }
+            9 {  [Void]($This.__ClassDefinition__.__BaseClass.__ConstructorScript.InvokeReturnAsIs($p1, $p2, $p3, $p4, $p5, $p6, $p7, $p8, $p9)) }
+            10 { [Void]($This.__ClassDefinition__.__BaseClass.__ConstructorScript.InvokeReturnAsIs($p1, $p2, $p3, $p4, $p5, $p6, $p7, $p8, $p9, $p10)) }
+            default {
+                throw (new-object PSClassException("PSClass does not support more than 10 arguments for a constructor."))
+            }
+        }
+    }
 
     $private:p1, $private:p2, $private:p3, $private:p4, $private:p5, $private:p6, `
         $private:p7, $private:p8, $private:p9, $private:p10 = $args
     switch($args.Count) {
-        0 {  [Void]($Constructor.InvokeReturnAsIs()) }
-        1 {  [Void]($Constructor.InvokeReturnAsIs($p1)) }
-        2 {  [Void]($Constructor.InvokeReturnAsIs($p1, $p2)) }
-        3 {  [Void]($Constructor.InvokeReturnAsIs($p1, $p2, $p3)) }
-        4 {  [Void]($Constructor.InvokeReturnAsIs($p1, $p2, $p3, $p4)) }
-        5 {  [Void]($Constructor.InvokeReturnAsIs($p1, $p2, $p3, $p4, $p5)) }
-        6 {  [Void]($Constructor.InvokeReturnAsIs($p1, $p2, $p3, $p4, $p5, $p6)) }
-        7 {  [Void]($Constructor.InvokeReturnAsIs($p1, $p2, $p3, $p4, $p5, $p6, $p7)) }
-        8 {  [Void]($Constructor.InvokeReturnAsIs($p1, $p2, $p3, $p4, $p5, $p6, $p7, $p8)) }
-        9 {  [Void]($Constructor.InvokeReturnAsIs($p1, $p2, $p3, $p4, $p5, $p6, $p7, $p8, $p9)) }
-        10 { [Void]($Constructor.InvokeReturnAsIs($p1, $p2, $p3, $p4, $p5, $p6, $p7, $p8, $p9, $p10)) }
+        0 {  [Void]($This.__ClassDefinition__.__ConstructorScript.InvokeReturnAsIs()) }
+        1 {  [Void]($This.__ClassDefinition__.__ConstructorScript.InvokeReturnAsIs($p1)) }
+        2 {  [Void]($This.__ClassDefinition__.__ConstructorScript.InvokeReturnAsIs($p1, $p2)) }
+        3 {  [Void]($This.__ClassDefinition__.__ConstructorScript.InvokeReturnAsIs($p1, $p2, $p3)) }
+        4 {  [Void]($This.__ClassDefinition__.__ConstructorScript.InvokeReturnAsIs($p1, $p2, $p3, $p4)) }
+        5 {  [Void]($This.__ClassDefinition__.__ConstructorScript.InvokeReturnAsIs($p1, $p2, $p3, $p4, $p5)) }
+        6 {  [Void]($This.__ClassDefinition__.__ConstructorScript.InvokeReturnAsIs($p1, $p2, $p3, $p4, $p5, $p6)) }
+        7 {  [Void]($This.__ClassDefinition__.__ConstructorScript.InvokeReturnAsIs($p1, $p2, $p3, $p4, $p5, $p6, $p7)) }
+        8 {  [Void]($This.__ClassDefinition__.__ConstructorScript.InvokeReturnAsIs($p1, $p2, $p3, $p4, $p5, $p6, $p7, $p8)) }
+        9 {  [Void]($This.__ClassDefinition__.__ConstructorScript.InvokeReturnAsIs($p1, $p2, $p3, $p4, $p5, $p6, $p7, $p8, $p9)) }
+        10 { [Void]($This.__ClassDefinition__.__ConstructorScript.InvokeReturnAsIs($p1, $p2, $p3, $p4, $p5, $p6, $p7, $p8, $p9, $p10)) }
         default {
             throw (new-object PSClassException("PSClass does not support more than 10 arguments for a constructor."))
         }
