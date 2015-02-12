@@ -39,7 +39,7 @@ SOFTWARE.
 @{
       ModuleToProcess = 'GpClass.psm1'
 
-        ModuleVersion = '0.1.0'
+        ModuleVersion = '0.1.2'
 
                  GUID = '6A8B9F36-50C2-4794-AFD5-9F59263E9080'
 
