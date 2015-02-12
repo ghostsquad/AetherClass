@@ -174,35 +174,16 @@ Describe "New-PSClass" {
                 }
             } -PassThru
 
-            $derivedClassName = [Guid]::NewGuid().ToString()
-            $derivedClass = New-PSClass $derivedClassName -inherit $testBaseClass {} -PassThru
-
-            $derived = $derivedClass.New($expectedValue)
-            $derived._foo | Should Be "default"
-        }
-
-        It "calls base constructor first then derived constructor with same args" {
-            $className = [Guid]::NewGuid().ToString()
-            $testBaseClass = New-PSClass $className {
-                note "_foo" "default"
-                note "_basenote"
-                constructor {
-                    $this._basenote = "base"
-                }
-            } -PassThru
-
+            $expectedValue = 'i am expected'
             $derivedClassName = [Guid]::NewGuid().ToString()
             $derivedClass = New-PSClass $derivedClassName -inherit $testBaseClass {
                 constructor {
-                    $this._foo = "derived"
+                    Base $args[0]
                 }
             } -PassThru
 
-            $expectedValue = "derived"
-
             $derived = $derivedClass.New($expectedValue)
             $derived._foo | Should Be $expectedValue
-            $derived._basenote | Should Be "base"
         }
 
         It "can use multiple constructor arguments" {
