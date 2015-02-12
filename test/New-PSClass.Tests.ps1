@@ -69,6 +69,34 @@ Describe "New-PSClass" {
     }
 
     Context "GivenBaseClass" {
+        It 'can call function:base with multiple inheritance' {
+            $className = [Guid]::NewGuid().ToString()
+            $testClass = New-PSClass $className {
+                note "_foo" "default"
+                constructor {
+                    $this._foo = $args[0]
+                }
+            } -PassThru
+
+            $className2 = [Guid]::NewGuid().ToString()
+            $testClass2 = New-PSClass $className2 -Inherit $className {
+                constructor {
+                    base $args[0]
+                }
+            } -PassThru
+
+            $className3 = [Guid]::NewGuid().ToString()
+            $testClass3 = New-PSClass $className3 -Inherit $className2 {
+                constructor {
+                    base $args[0]
+                }
+            } -PassThru
+
+            $expectedValue = 'i am expected'
+            $sut = $testClass3.New($expectedValue)
+            $sut._foo | should be $expectedValue
+        }
+
         It "can override method with empty params" {
             $className = [Guid]::NewGuid().ToString()
             $derivedClass = New-PSClass $className -inherit $testClass {
