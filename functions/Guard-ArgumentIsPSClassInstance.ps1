@@ -22,39 +22,13 @@ function Guard-ArgumentIsPSClassInstance {
     Guard-ArgumentNotNull $ArgumentName $InputObject
 
     if($PSCmdlet.ParameterSetName -eq 'PSClassName') {
-        Guard-ArgumentNotNull 'PSClassName' $PSClassName
-        $PSClass = Get-PSClass $PSClassName
+        $ObjectIsPSClassInstance = ObjectIs-PSClassInstance -PSClassName $PSClassName
     } else {
-        Guard-ArgumentNotNull 'PSClass' $PSClass
-        $PSClassName = $PSClass.__ClassName
+        $ObjectIsPSClassInstance = ObjectIs-PSClassInstance -PSClass $PSClass
     }
 
-    $foundClassInTypeNames = $false
-    foreach($typeName in $InputObject.psobject.TypeNames) {
-        if($typeName -eq $PSClassName) {
-            $foundClassInTypeNames = $true
-            break
-        }
-    }
-
-    if(-not $foundClassInTypeNames) {
+    if(-not $ObjectIsPSClassInstance) {
         throw (New-Object PSClassException(
-            ('InputObject does not appear have been created by New-PSClass, as the TypeName: {0} was not found in the objects TypeNames list.' -f $PSClass.__ClassName)))
-    }
-
-    # Compare Members
-    foreach($classMember in $PSClass.__Members.Values) {
-        $memberName = $classMember.Name
-        $objectMember = $InputObject.psobject.members[$memberName]
-        # compare member types
-        # we could go further and compare parameters for method scripts and property getter/setter, but that seems like overkill
-        # considering that the PSClass TypeName assertion prior to this
-        if ($objectMember -ne $null -and $objectMember.GetType() -ne $classMember.GetType()) {
-            throw (New-Object PSClassException(
-                ('Member type mismatch. Class has member {0} which is {1}, where as the object has a member with the same name which is {2}' -f `
-                    $memberName, `
-                    $psMemberInfo.GetType(), `
-                    $objectMember.GetType())))
-        }
+            ('InputObject does not appear have been created by New-PSClass.' -f $PSClass.__ClassName)))
     }
 }

@@ -4,19 +4,22 @@ function Setup-Mock {
         [parameter(ValueFromPipeline)]
         [psobject]$Mock,
 
-        [parameter(position=0)]
+        [SetupType]$Type = ([SetupType]::Method),
+
+        [parameter(position=1)]
         [alias("m", "Member", "Method", "Note", "Property")]
         [string]$MemberName,
 
-        [parameter(position=1)]
+        [parameter(position=2, ParameterSetName="Method")]
         [alias("e")]
         [func[object,bool][]]$Expectations = (New-Object 'func[object, bool][]'(0)),
 
+        [parameter(position=2, ParameterSetName="Property")]
+        [object]$defaultValue,
+
         [parameter()]
         [alias("p")]
-        [switch]$PassThru,
-
-        [SetupType]$Type = ([SetupType]::Method)
+        [switch]$PassThru
     )
 
     Guard-ArgumentIsPSClassInstance 'Mock' $Mock 'GpClass.Mock'
