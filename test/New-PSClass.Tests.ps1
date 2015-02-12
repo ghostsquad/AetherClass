@@ -109,7 +109,11 @@ Describe "New-PSClass" {
             } -PassThru
 
             $derivedClassName = [Guid]::NewGuid().ToString()
-            $derivedClass = New-PSClass $derivedClassName -inherit $testClass {} -PassThru
+            $derivedClass = New-PSClass $derivedClassName -inherit $testClass {
+                constructor {
+                    Base $args[0] $args[1]
+                }
+            } -PassThru
 
             $myAObject = New-PSObject @{
                 someProp = (New-PSObject @{
@@ -145,7 +149,7 @@ Describe "New-PSClass" {
             $testObj.foo | Should Be "set by constructor"
         }
 
-        It "calls base constructor when available" {
+        It "does not call base constructor" {
             $className = [Guid]::NewGuid().ToString()
             $testBaseClass = New-PSClass $className {
                 note "_foo" "default"
@@ -157,34 +161,29 @@ Describe "New-PSClass" {
             $derivedClassName = [Guid]::NewGuid().ToString()
             $derivedClass = New-PSClass $derivedClassName -inherit $testBaseClass {} -PassThru
 
-            $expectedValue = "derived"
-
-            $derived = $derivedClass.New($expectedValue)
-            $derived._foo | Should Be $expectedValue
+            $derived = $derivedClass.New('something else')
+            $derived._foo | Should Be "default"
         }
 
-        It "calls base constructor first then derived constructor with same args" {
+        It "can call base constructor using function:base" {
             $className = [Guid]::NewGuid().ToString()
             $testBaseClass = New-PSClass $className {
                 note "_foo" "default"
-                note "_basenote"
                 constructor {
-                    $this._basenote = "base"
+                    $this._foo = $args[0]
                 }
             } -PassThru
 
+            $expectedValue = 'i am expected'
             $derivedClassName = [Guid]::NewGuid().ToString()
             $derivedClass = New-PSClass $derivedClassName -inherit $testBaseClass {
                 constructor {
-                    $this._foo = "derived"
+                    Base $args[0]
                 }
             } -PassThru
 
-            $expectedValue = "derived"
-
             $derived = $derivedClass.New($expectedValue)
             $derived._foo | Should Be $expectedValue
-            $derived._basenote | Should Be "base"
         }
 
         It "can use multiple constructor arguments" {
