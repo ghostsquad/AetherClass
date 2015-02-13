@@ -23,19 +23,6 @@ function Setup-Mock {
         [switch]$PassThru
     )
 
-    function GetMember {
-        param (
-            [string]$memberName
-        )
-
-        $member = $Mock._originalClass.__Members[$MemberName]
-        if($member -eq $null) {
-            throw (new-object PSMockException("Member with name: $MemberName cannot be found to mock!"))
-        }
-
-        return $member
-    }
-
     Guard-ArgumentIsPSClassInstance 'Mock' $Mock 'GpClass.Mock'
 
     $setupInfo = $null
@@ -44,32 +31,11 @@ function Setup-Mock {
         Guard-ArgumentNotNullOrEmpty 'MethodName' $MethodName
         Guard-ArgumentNotNull 'Expectations' $Expectations
 
-        $member = GetMember $MethodName
-
-        if($member -isnot [System.Management.Automation.PSScriptMethod]) {
-            throw (new-object PSMockException(("Member {0} is not a PSScriptMethod." -f $MethodName)))
-        }
-
-        $setupInfo = New-PSClassInstance 'PSClass.Mock.MethodSetupInfo' -ArgumentList @(
-            $MethodName,
-            $Expectations
-        )
-
-        [Void]$Mock._mockedMethods[$MethodName].Add($setupInfo)
+        $setupInfo = $Mock.Setup($MethodName, $Expectations)
     } else {
         Guard-ArgumentNotNullOrEmpty 'PropertyName' $PropertyName
-        $member = GetMember $MethodName
 
-        if($member -isnot [System.Management.Automation.PSNoteProperty] -and $member -isnot [System.Management.Automation.PSScriptProperty]) {
-            throw (new-object PSMockException(("Member {0} is not a PSScriptProperty or PSNoteProperty." -f $PropertyName)))
-        }
-
-        $setupInfo = New-PSClassInstance 'PSClass.Mock.PropertySetupInfo' -ArgumentList @(
-            $PropertyName,
-            $DefaultValue
-        )
-
-        [Void]$Mock._mockedProperties[$PropertyName].Add($setupInfo)
+        $setupInfo = $Mock.SetupProperty($PropertyName, $DefaultValue)
     }
 
     if($PassThru) {

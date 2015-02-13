@@ -185,7 +185,7 @@ Describe 'New-PSClass' {
             $newDerived.baseMethod() | Should Be "base"
         }
 
-        It 'Methods - Static - Accessible from ClassObject' {
+        It 'Methods - Static - Accessible from class object' {
             $className = [Guid]::NewGuid().ToString()
             $testClass = New-PSClass $className {
                 method "testMethod" -static {
@@ -195,7 +195,7 @@ Describe 'New-PSClass' {
             $testClass.testMethod() | Should Be "expected"
         }
 
-        It 'Instance Construction - Handles Single Parameter' {
+        It 'Instance Construction - Handles single parameter' {
             $className = [Guid]::NewGuid().ToString()
             $testClass = New-PSClass $className {
                 note 'note1'
@@ -212,7 +212,7 @@ Describe 'New-PSClass' {
             $instance.note1 | Should Be 'expected1'
         }
 
-        It 'Instance Construction - Handles Multiple Params' {
+        It 'Instance Construction - Handles multiple params' {
             $className = [Guid]::NewGuid().ToString()
             $testClass = New-PSClass $className {
                 note 'note1'
@@ -233,7 +233,7 @@ Describe 'New-PSClass' {
             $instance.note2 | Should Be 'expected2'
         }
 
-        It 'Instance Construction - Handles Unnamed Args' {
+        It 'Instance Construction - Handles unnamed args' {
             $className = [Guid]::NewGuid().ToString()
             $testClass = New-PSClass $className {
                 note 'note1'
@@ -253,7 +253,7 @@ Describe 'New-PSClass' {
             $instance.note2 | Should Be 'expected2'
         }
 
-        It 'Instance Construction - Handles Collection with Single Element' {
+        It 'Instance Construction - Handles collection with single element' {
             $className = [Guid]::NewGuid().ToString()
             $testClass = New-PSClass $className {
                 note 'collection1'
@@ -301,7 +301,7 @@ Describe 'New-PSClass' {
             $instance.collection2.Count | Should Be 5
         }
 
-        It 'Instance Construction - Inheritance - Can pass single param to BASE class' {
+        It 'Instance Construction - Inheritance - Can pass single param to base class' {
             $baseClassName = [Guid]::NewGuid().ToString()
             $baseClass = New-PSClass $baseClassName {
                 note 'note1'
@@ -329,7 +329,37 @@ Describe 'New-PSClass' {
             $instance.note1 | Should Be 'expected1'
         }
 
-        It 'Instance Construction - Inheritance - Can pass multiple params to BASE class' {
+        It 'Instance Construction - Inheritance - Performs remaining construction after base call' {
+            $baseClassName = [Guid]::NewGuid().ToString()
+            $baseClass = New-PSClass $baseClassName {
+                note 'note1'
+                constructor {
+                    param (
+                        $note1
+                    )
+
+                    $this.note1 = $note1
+                }
+            } -PassThru
+
+            $derivedClassName = [Guid]::NewGuid().ToString()
+            $derivedClass = New-PSClass $derivedClassName -inherit $baseClass {
+                constructor {
+                    param (
+                        $value
+                    )
+
+                    base $value
+
+                    $this.note1 = 'set later'
+                }
+            } -PassThru
+
+            $instance = $derivedClass.New('expected1')
+            $instance.note1 | Should Be 'set later'
+        }
+
+        It 'Instance Construction - Inheritance - Can pass multiple params to base class' {
             $baseClassName = [Guid]::NewGuid().ToString()
             $baseClass = New-PSClass $baseClassName {
                 note 'note1'
@@ -362,7 +392,7 @@ Describe 'New-PSClass' {
             $instance.note2 | Should Be 'expected2'
         }
 
-        It 'Instance Construction - Inheritance - Can pass multiple params to BASE chain' {
+        It 'Instance Construction - Inheritance - Can pass multiple params to extended base chain' {
             $baseClassName = [Guid]::NewGuid().ToString()
             $baseClass = New-PSClass $baseClassName {
                 note 'note1'
@@ -407,7 +437,7 @@ Describe 'New-PSClass' {
             $instance.note2 | Should Be 'expected2'
         }
 
-        It 'Instance Construction - Inheritance - Base Chain handles collections properly' {
+        It 'Instance Construction - Inheritance - Extended base chain handles collections properly' {
             $baseClassName = [Guid]::NewGuid().ToString()
             $baseClass = New-PSClass $baseClassName {
                 note 'collection1'

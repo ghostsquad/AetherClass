@@ -115,13 +115,43 @@ if(-not (Get-PSClass 'GpClass.Mock')) {
             $this.Object = $theMockObject
         }
 
+        method _GetMemberFromOriginal {
+            param (
+                [string]$memberName
+            )
+
+            $member = $this._originalClass.__Members[$MemberName]
+            if($member -eq $null) {
+                throw (new-object PSMockException("Member with name: $MemberName cannot be found to mock!"))
+            }
+
+            return $member
+        }
+
         method 'Setup' {
             param (
                 [string]$MethodName,
                 [func[object, bool][]]$Expectations = @()
             )
 
-            return (Setup-Mock -Mock $this -Type 'Method' -Method $MethodName -Expectations $Expectations -PassThru)
+            breakpoint
+
+            Guard-ArgumentNotNull 'MethodName' $MethodName
+
+            $member = $this._GetMemberFromOriginal($MethodName)
+
+            if($member -isnot [System.Management.Automation.PSScriptMethod]) {
+                throw (new-object PSMockException(("Member {0} is not a PSScriptMethod." -f $MethodName)))
+            }
+
+            $setupInfo = New-PSClassInstance 'PSClass.Mock.MethodSetupInfo' -ArgumentList @(
+                $MethodName,
+                $Expectations
+            )
+
+            [Void]$this._mockedMethods[$MethodName].Add($setupInfo)
+
+            return $setupInfo
         }
 
         method 'SetupMethod' {
@@ -130,7 +160,7 @@ if(-not (Get-PSClass 'GpClass.Mock')) {
                 [func[object, bool][]]$Expectations = @()
             )
 
-            return (Setup-Mock -Mock $this -Type 'Method' -Method $MethodName -Expectations $Expectations -PassThru)
+            return $this.Setup($MethodName, $Expectations)
         }
 
         method 'SetupProperty' {
@@ -140,11 +170,20 @@ if(-not (Get-PSClass 'GpClass.Mock')) {
             )
 
             Guard-ArgumentNotNull 'PropertyName' $PropertyName
-            if(-not $this._originalClass.__Notes.ContainsKey($PropertyName) `
-                -and -not $this._originalClass.__Properties.ContainsKey($PropertyName)) {
+            $member = $this._GetMemberFromOriginal($PropertyName)
 
-                throw (new-object PSMockException("Method with name: $MethodName cannot be found to mock!"))
+            if($member -isnot [System.Management.Automation.PSNoteProperty] -and $member -isnot [System.Management.Automation.PSScriptProperty]) {
+                throw (new-object PSMockException(("Member {0} is not a PSScriptProperty or PSNoteProperty." -f $PropertyName)))
             }
+
+            $setupInfo = New-PSClassInstance 'PSClass.Mock.PropertySetupInfo' -ArgumentList @(
+                $PropertyName,
+                $DefaultValue
+            )
+
+            [Void]$this._mockedProperties[$PropertyName].Add($setupInfo)
+
+            return $setupInfo
         }
 
         method 'Verify' {
@@ -353,6 +392,8 @@ if(-not (Get-PSClass 'PSClass.Mock.MethodSetupInfo')) {
             )
 
             Base $Name
+
+            breakpoint
 
             [Void]$this.Expectations.AddRange($Expectations)
             $this.ExceptionToThrow = $null
