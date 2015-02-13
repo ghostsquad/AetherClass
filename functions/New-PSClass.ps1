@@ -140,6 +140,8 @@ function New-PSClass {
             throw (new-object PSClassException("PSClass does not support more than 10 arguments for a constructor."))
         }
 
+        breakpoint {$this.__ClassName -eq 'GpClass.Mock.MethodSetupInfo'}
+
         $private:instance = PSClass_InitInstance $this
 
         if($this.__ConstructorScript -ne $null) {
@@ -260,6 +262,8 @@ function PSClass_RunConstructor {
     param (
         [PSObject]$This
     )
+
+    breakpoint
 
     function Base {
         $private:p1, $private:p2, $private:p3, $private:p4, $private:p5, $private:p6, `
