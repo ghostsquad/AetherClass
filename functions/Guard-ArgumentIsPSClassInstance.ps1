@@ -28,7 +28,6 @@ function Guard-ArgumentIsPSClassInstance {
     }
 
     if(-not $ObjectIsPSClassInstance) {
-        throw (New-Object PSClassException(
-            ('InputObject does not appear have been created by New-PSClass.' -f $PSClass.__ClassName)))
+        throw (New-Object PSClassException('InputObject does not appear have been created by New-PSClass.'))
     }
 }

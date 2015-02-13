@@ -38,7 +38,7 @@ Describe 'Setup-Mock' {
             $mock = New-PSClassMock $testClass
             $actualSetupInfo = $mock | Setup-Mock -Method 'foo' -Expectations {param($a) return $true} -PassThru
             $actualSetupInfo.Expectations.Count | Should Be 1
-            $actualSetupInfo.Expectations[0].Invoke() | Should Be $true
+            $actualSetupInfo.Expectations[0].Invoke('anyvalue') | Should Be $true
         }
     }
 
@@ -80,22 +80,22 @@ Describe 'Setup-Mock' {
 
         It 'Throws if methodname is null' {
             $mock = New-PSClassMock $testClass
-            $msg = "Value cannot be null."
-            $msg += "`nParameter name: MethodName"
+            $msg = "Argument was empty."
+            $msg += "`r`nParameter name: MethodName"
             { $mock | Setup-Mock -Method $null -Expectations $null } | Should Throw $msg
         }
 
         It 'Throws if methodname is empty' {
             $mock = New-PSClassMock $testClass
-            $msg = "Argument was empty"
-            $msg += "`nParameter name: MethodName"
+            $msg = "Argument was empty."
+            $msg += "`r`nParameter name: MethodName"
             { $mock | Setup-Mock -Method '' -Expectations $null } | Should Throw $msg
         }
 
         It 'Throws if expectations are null' {
             $mock = New-PSClassMock $testClass
             $msg = "Value cannot be null."
-            $msg += "`nParameter name: Expectations"
+            $msg += "`r`nParameter name: Expectations"
             { $mock | Setup-Mock -Method 'iamaproperty' -Expectations $null } | Should Throw $msg
         }
     }

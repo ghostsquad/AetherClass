@@ -6,8 +6,7 @@
     /// The ps mock exception.
     /// </summary>
     public class PSMockException : Exception {
-        public enum ExceptionReason
-        {
+        public enum ExceptionReason {
             NoSetup,
             ReturnValueRequired,
             VerificationFailed,
