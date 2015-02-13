@@ -1,43 +1,22 @@
 $here = Split-Path -Parent $MyInvocation.MyCommand.Path
-# here : /branch/tests/Poshbox.Test
 . "$here\..\TestCommon.ps1"
 
-Describe "New-PSClass" {
-    It 'cannot create two classes with the same name' {
-        $className = [Guid]::NewGuid().ToString()
-        $testClass = New-PSClass $className {} -PassThru
-        { New-PSClass $className {} } | Should Throw
-    }
-
-    It 'can inherit using the name of a class instead of a variable of the class definition' {
-        $className = [Guid]::NewGuid().ToString()
-        $testClass = New-PSClass $className {} -PassThru
-
-        $derivedClassName = [Guid]::NewGuid().ToString()
-        $derivedClass = New-PSClass $derivedClassName -Inherit $className {} -PassThru
-    }
-
-    It 'can override OBJECT methods (like ToString())' {
-        $className = [Guid]::NewGuid().ToString()
-        $testClass = New-PSClass $className {
-            method -override 'ToString' {
-                return 'foo'
-            }
-        } -PassThru
-
-        $sut = $testClass.New()
-        $sut.ToString() | Should Be 'foo'
-    }
-
-    Context 'PassThru' {
-        It 'Returns class object when given -PassThru switch' {
+Describe 'New-PSClass' {
+    Context 'Sunny' {
+        It 'Class Creation - Given -PassThru, returns class object' {
             $className = [Guid]::NewGuid().ToString()
             $testClass = New-PSClass $className {} -PassThru
             ($testClass -ne $null) | Should Be $true
             $testClass.__ClassName | Should Be $className
         }
 
-        It 'has no return value without passthru, but can be accessed from Get-PSClass' {
+        It 'Class Creation - Omitting -PassThru, returns null' {
+            $className = [Guid]::NewGuid().ToString()
+            $result = New-PSClass $className {}
+            ($result -eq $null) | Should Be $true
+        }
+
+        It 'Class Creation - Class can be accessed using Get-PSClass' {
             $className = [Guid]::NewGuid().ToString()
             $testClass = New-PSClass $className {}
             ($testClass -eq $null) | Should Be $true
@@ -46,10 +25,167 @@ Describe "New-PSClass" {
             ($testClass -eq $null) | Should Be $false
             $testClass.__ClassName | Should Be $className
         }
-    }
 
-    Context "GivenStaticMethod" {
-        It "runs provided script block" {
+        It 'Inheritance - Can inherit using class name string' {
+            $className = [Guid]::NewGuid().ToString()
+            $testClass = New-PSClass $className {} -PassThru
+
+            $derivedClassName = [Guid]::NewGuid().ToString()
+            $derivedClass = New-PSClass $derivedClassName -Inherit $className {} -PassThru
+
+            $derivedClass.__ClassName | Should Be $derivedClassName
+            $derivedClass.__BaseClass.__ClassName | Should Be $className
+        }
+
+        It 'Inheritance - Can inherit using class object' {
+            $className = [Guid]::NewGuid().ToString()
+            $testClass = New-PSClass $className {} -PassThru
+
+            $derivedClassName = [Guid]::NewGuid().ToString()
+            $derivedClass = New-PSClass $derivedClassName -Inherit $testClass {} -PassThru
+
+            $derivedClass.__ClassName | Should Be $derivedClassName
+            $derivedClass.__BaseClass.__ClassName | Should Be $className
+        }
+
+        It 'Inheritance - Can inherit using class object' {
+            $className = [Guid]::NewGuid().ToString()
+            $testClass = New-PSClass $className {} -PassThru
+
+            $derivedClassName = [Guid]::NewGuid().ToString()
+            $derivedClass = New-PSClass $derivedClassName -Inherit $testClass {} -PassThru
+
+            $derivedClass.__ClassName | Should Be $derivedClassName
+            $derivedClass.__BaseClass.__ClassName | Should Be $className
+        }
+
+        It 'Notes - can get default value-typed note values' {
+            $className = [Guid]::NewGuid().ToString()
+            $testClass = New-PSClass $className {
+                note 'foo' 'default value'
+            } -PassThru
+
+            $testObj = $testClass.New()
+            $testObj.foo | Should Be 'default value'
+        }
+
+        It 'Notes - can get constructor defined note values' {
+            $className = [Guid]::NewGuid().ToString()
+            $testClass = New-PSClass $className {
+                constructor {
+                    $this.foo = 'set by constructor'
+                }
+
+                note 'foo'
+            } -PassThru
+
+            $testObj = $testClass.New()
+            $testObj.foo | Should Be 'set by constructor'
+        }
+
+        It 'Notes - constructor sets note value after default is set' {
+            $className = [Guid]::NewGuid().ToString()
+            $testClass = New-PSClass $className {
+                constructor {
+                    $this.foo = 'set by constructor'
+                }
+
+                note 'foo' 'default'
+            } -PassThru
+
+            $testObj = $testClass.New()
+            $testObj.foo | Should Be 'set by constructor'
+        }
+
+        It 'Notes - Overriding - can get non overridden base note' {
+            $baseClassName = [Guid]::NewGuid().ToString()
+            $baseClass = New-PSClass $baseClassName {
+                note "baseNote" "base"
+            } -PassThru
+
+            $derivedClassName = [Guid]::NewGuid().ToString()
+            $derivedClass = New-PSClass $derivedClassName -inherit $baseClass {} -PassThru
+
+            $newDerived = $derivedClass.New()
+            $newDerived.baseNote | Should Be "base"
+        }
+
+        It 'Properties - getter invoked when called' {
+            $className = [Guid]::NewGuid().ToString()
+            $testClass = New-PSClass $className {
+                property 'foo' {return 'default value'}
+            } -PassThru
+
+            $testObj = $testClass.New()
+            $testObj.foo | Should Be 'default value'
+        }
+
+        It 'Properties - setter invoked when set' {
+            $className = [Guid]::NewGuid().ToString()
+            $testClass = New-PSClass $className {
+                note 'bar'
+                property 'foo' {} {$this.bar = $args[0]}
+            } -PassThru
+
+            $testObj = $testClass.New()
+            $testObj.foo = 'expected'
+            $testObj.bar | Should Be 'expected'
+        }
+
+        It 'Properties - Overriding - can get non overridden base property' {
+            $baseClassName = [Guid]::NewGuid().ToString()
+            $baseClass = New-PSClass $baseClassName {
+                property "baseProperty" { return "base" }
+            } -PassThru
+
+            $derivedClassName = [Guid]::NewGuid().ToString()
+            $derivedClass = New-PSClass $derivedClassName -inherit $baseClass {} -PassThru
+
+            $newDerived = $derivedClass.New()
+            $newDerived.baseProperty | Should Be "base"
+        }
+
+        It 'Methods - Overriding - Can override [object] methods like ToString()' {
+            $className = [Guid]::NewGuid().ToString()
+            $testClass = New-PSClass $className {
+                method -override 'ToString' {
+                    return 'foo'
+                }
+            } -PassThru
+
+            $sut = $testClass.New()
+            $sut.ToString() | Should Be 'foo'
+        }
+
+        It 'Methods - Overriding - Can override method with empty params' {
+            $baseClassName = [Guid]::NewGuid().ToString()
+            $baseClass = New-PSClass $baseClassName {
+                method "testMethodNoParams" { return "base" }
+            } -PassThru
+
+            $derivedClassName = [Guid]::NewGuid().ToString()
+            $derivedClass = New-PSClass $derivedClassName -inherit $baseClass {
+                method -override "testMethodNoParams" { return "expected" }
+            } -PassThru
+
+            $newDerived = $derivedClass.New()
+            $newDerived.testMethodNoParams() | Should Be "expected"
+        }
+
+        It 'Methods - Overriding - can call non overridden base method' {
+            $baseClassName = [Guid]::NewGuid().ToString()
+            $baseClass = New-PSClass $baseClassName {
+                method "baseMethod" { return "base" }
+            } -PassThru
+
+            $derivedClassName = [Guid]::NewGuid().ToString()
+            $derivedClass = New-PSClass $derivedClassName -inherit $baseClass {} -PassThru
+
+            $newDerived = $derivedClass.New()
+            $newDerived.baseMethod() | Should Be "base"
+        }
+
+        It 'Methods - Static - Accessible from ClassObject' {
             $className = [Guid]::NewGuid().ToString()
             $testClass = New-PSClass $className {
                 method "testMethod" -static {
@@ -58,236 +194,279 @@ Describe "New-PSClass" {
             } -PassThru
             $testClass.testMethod() | Should Be "expected"
         }
-    }
 
-    BeforeEach {
-        $className = [Guid]::NewGuid().ToString()
-        $testClass = New-PSClass $className {
-            method "testMethodNoParams" { return "base" }
-            note "foo" "base"
-        } -PassThru
-    }
-
-    Context "GivenBaseClass" {
-        It 'can call function:base with multiple inheritance' {
+        It 'Instance Construction - Handles Single Parameter' {
             $className = [Guid]::NewGuid().ToString()
             $testClass = New-PSClass $className {
-                note "_foo" "default"
-                constructor {
-                    $this._foo = $args[0]
-                }
-            } -PassThru
-
-            $className2 = [Guid]::NewGuid().ToString()
-            $testClass2 = New-PSClass $className2 -Inherit $className {
-                constructor {
-                    base $args[0]
-                }
-            } -PassThru
-
-            $className3 = [Guid]::NewGuid().ToString()
-            $testClass3 = New-PSClass $className3 -Inherit $className2 {
-                constructor {
-                    base $args[0]
-                }
-            } -PassThru
-
-            $expectedValue = 'i am expected'
-            $sut = $testClass3.New($expectedValue)
-            $sut._foo | should be $expectedValue
-        }
-
-        It "can override method with empty params" {
-            $className = [Guid]::NewGuid().ToString()
-            $derivedClass = New-PSClass $className -inherit $testClass {
-                method -override "testMethodNoParams" { return "expected" }
-            } -PassThru
-
-            $newDerived = $derivedClass.New()
-            $newDerived.testMethodNoParams() | Should Be "expected"
-        }
-
-        It "can call non overridden base method" {
-            $className = [Guid]::NewGuid().ToString()
-            $derivedClass = New-PSClass $className -inherit $testClass {} -PassThru
-            $newDerived = $derivedClass.New()
-            $newDerived.testMethodNoParams() | Should Be "base"
-        }
-
-        It "can call non overridden base note" {
-            $className = [Guid]::NewGuid().ToString()
-            $derivedClass = New-PSClass $className -inherit $testClass {} -PassThru
-            $newDerived = $derivedClass.New()
-            $newDerived.foo | Should Be "base"
-        }
-
-        It "can use complex objects in base constructor" {
-            $className = [Guid]::NewGuid().ToString()
-            $testClass = New-PSClass $className {
-                note "_foo" "default"
-                note "_bar" "default"
+                note 'note1'
                 constructor {
                     param (
-                        [psobject]$a,
-                        [psobject]$b
+                        $note1
                     )
-                    $this._foo = $a
-                    $this._bar = $b
+
+                    $this.note1 = $note1
                 }
             } -PassThru
 
-            $derivedClassName = [Guid]::NewGuid().ToString()
-            $derivedClass = New-PSClass $derivedClassName -inherit $testClass {
-                constructor {
-                    Base $args[0] $args[1]
-                }
-            } -PassThru
-
-            $myAObject = New-PSObject @{
-                someProp = (New-PSObject @{
-                    anotherProp = "foo"
-                })
-            }
-
-            $myBObject = New-PSObject @{
-                prop1 = (New-PSObject @{
-                    prop2 = "bar"
-                })
-            }
-
-            $instance = $derivedClass.New($myAObject, $myBObject)
-            $instance._foo.someProp.anotherProp | Should Be $myAObject.someProp.anotherProp
-            $instance._bar.prop1.prop2 | Should Be $myBObject.prop1.prop2
+            $instance = $testClass.New('expected1')
+            $instance.note1 | Should Be 'expected1'
         }
-    }
 
-    Context "Constructor - Sunny" {
-        It "can access and set defined notes" {
+        It 'Instance Construction - Handles Multiple Params' {
             $className = [Guid]::NewGuid().ToString()
             $testClass = New-PSClass $className {
-                constructor {
-                    $this._foo = "set by constructor"
-                }
-
-                note "_foo" "default"
-                property "foo" { return $this._foo }
-            } -PassThru
-
-            $testObj = $testClass.New()
-            $testObj.foo | Should Be "set by constructor"
-        }
-
-        It "does not call base constructor" {
-            $className = [Guid]::NewGuid().ToString()
-            $testBaseClass = New-PSClass $className {
-                note "_foo" "default"
-                constructor {
-                    $this._foo = $args[0]
-                }
-            } -PassThru
-
-            $derivedClassName = [Guid]::NewGuid().ToString()
-            $derivedClass = New-PSClass $derivedClassName -inherit $testBaseClass {} -PassThru
-
-            $derived = $derivedClass.New('something else')
-            $derived._foo | Should Be "default"
-        }
-
-        It "can call base constructor using function:base" {
-            $className = [Guid]::NewGuid().ToString()
-            $testBaseClass = New-PSClass $className {
-                note "_foo" "default"
-                constructor {
-                    $this._foo = $args[0]
-                }
-            } -PassThru
-
-            $expectedValue = 'i am expected'
-            $derivedClassName = [Guid]::NewGuid().ToString()
-            $derivedClass = New-PSClass $derivedClassName -inherit $testBaseClass {
-                constructor {
-                    Base $args[0]
-                }
-            } -PassThru
-
-            $derived = $derivedClass.New($expectedValue)
-            $derived._foo | Should Be $expectedValue
-        }
-
-        It "can use multiple constructor arguments" {
-            $className = [Guid]::NewGuid().ToString()
-            $testClass = New-PSClass $className {
-                note "_foo" "default"
-                note "_bar" "default"
-                constructor {
-                    param($a, $b)
-                    $this._foo = $a
-                    $this._bar = $b
-                }
-            } -PassThru
-
-            $expectedFoo = "expected foo"
-            $expectedBar = "expected bar"
-
-            $instance = $testClass.New($expectedFoo, $expectedBar)
-            $instance._foo | Should Be $expectedFoo
-            $instance._bar | Should Be $expectedBar
-        }
-
-        It "can use constructor args auto variable" {
-            $className = [Guid]::NewGuid().ToString()
-            $testClass = New-PSClass $className {
-                note "_foo" "default"
-                note "_bar" "default"
-                constructor {
-                    $this._foo = $args[0]
-                    $this._bar = $args[1]
-                }
-            } -PassThru
-
-            $expectedFoo = "expected foo"
-            $expectedBar = "expected bar"
-
-            $instance = $testClass.New($expectedFoo, $expectedBar)
-            $instance._foo | Should Be $expectedFoo
-            $instance._bar | Should Be $expectedBar
-        }
-
-        It "can use complex objects in constructor" {
-            $className = [Guid]::NewGuid().ToString()
-            $testClass = New-PSClass $className {
-                note "_foo" "default"
-                note "_bar" "default"
+                note 'note1'
+                note 'note2'
                 constructor {
                     param (
-                        [psobject]$a,
-                        [psobject]$b
+                        $note1,
+                        $note2
                     )
-                    $this._foo = $a
-                    $this._bar = $b
+
+                    $this.note1 = $note1
+                    $this.note2 = $note2
                 }
             } -PassThru
 
-            $myAObject = New-PSObject @{
-                someProp = (New-PSObject @{
-                    anotherProp = "foo"
-                })
-            }
+            $instance = $testClass.New('expected1', 'expected2')
+            $instance.note1 | Should Be 'expected1'
+            $instance.note2 | Should Be 'expected2'
+        }
 
-            $myBObject = New-PSObject @{
-                prop1 = (New-PSObject @{
-                    prop2 = "bar"
-                })
-            }
+        It 'Instance Construction - Handles Unnamed Args' {
+            $className = [Guid]::NewGuid().ToString()
+            $testClass = New-PSClass $className {
+                note 'note1'
+                note 'note2'
+                constructor {
+                    param (
+                        $note1
+                    )
 
-            $instance = $testClass.New($myAObject, $myBObject)
-            $instance._foo.someProp.anotherProp | Should Be $myAObject.someProp.anotherProp
-            $instance._bar.prop1.prop2 | Should Be $myBObject.prop1.prop2
+                    $this.note1 = $note1
+                    $this.note2 = $args[0]
+                }
+            } -PassThru
+
+            $instance = $testClass.New('expected1', 'expected2')
+            $instance.note1 | Should Be 'expected1'
+            $instance.note2 | Should Be 'expected2'
+        }
+
+        It 'Instance Construction - Handles Collection with Single Element' {
+            $className = [Guid]::NewGuid().ToString()
+            $testClass = New-PSClass $className {
+                note 'collection1'
+                constructor {
+                    param (
+                        $collection1
+                    )
+
+                    $this.collection1 = $collection1
+                }
+            } -PassThru
+
+            $expectedCollection1 = @(1)
+
+            $instance = $testClass.New($expectedCollection1)
+            $instance.collection1.GetType() | Should Be ([System.Object[]])
+
+            $instance.collection1.Count | Should Be 1
+        }
+
+        It 'Instance Construction - Handles Collections' {
+            $className = [Guid]::NewGuid().ToString()
+            $testClass = New-PSClass $className {
+                note 'collection1'
+                note 'collection2'
+                constructor {
+                    param (
+                        $collection1,
+                        $collection2
+                    )
+
+                    $this.collection1 = $collection1
+                    $this.collection2 = $collection2
+                }
+            } -PassThru
+
+            $expectedCollection1 = @(1,2,3)
+            $expectedCollection2 = @(1,2,3,4,5)
+
+            $instance = $testClass.New($expectedCollection1, $expectedCollection2)
+            $instance.collection1.GetType() | Should Be ([System.Object[]])
+            $instance.collection2.GetType() | Should Be ([System.Object[]])
+
+            $instance.collection1.Count | Should Be 3
+            $instance.collection2.Count | Should Be 5
+        }
+
+        It 'Instance Construction - Inheritance - Can pass single param to BASE class' {
+            $baseClassName = [Guid]::NewGuid().ToString()
+            $baseClass = New-PSClass $baseClassName {
+                note 'note1'
+                constructor {
+                    param (
+                        $note1
+                    )
+
+                    $this.note1 = $note1
+                }
+            } -PassThru
+
+            $derivedClassName = [Guid]::NewGuid().ToString()
+            $derivedClass = New-PSClass $derivedClassName -inherit $baseClass {
+                constructor {
+                    param (
+                        $value
+                    )
+
+                    base $value
+                }
+            } -PassThru
+
+            $instance = $derivedClass.New('expected1')
+            $instance.note1 | Should Be 'expected1'
+        }
+
+        It 'Instance Construction - Inheritance - Can pass multiple params to BASE class' {
+            $baseClassName = [Guid]::NewGuid().ToString()
+            $baseClass = New-PSClass $baseClassName {
+                note 'note1'
+                note 'note2'
+                constructor {
+                    param (
+                        $note1,
+                        $note2
+                    )
+
+                    $this.note1 = $note1
+                    $this.note2 = $note2
+                }
+            } -PassThru
+
+            $derivedClassName = [Guid]::NewGuid().ToString()
+            $derivedClass = New-PSClass $derivedClassName -inherit $baseClass {
+                constructor {
+                    param (
+                        $value,
+                        $value2
+                    )
+
+                    base $value $value2
+                }
+            } -PassThru
+
+            $instance = $derivedClass.New('expected1', 'expected2')
+            $instance.note1 | Should Be 'expected1'
+            $instance.note2 | Should Be 'expected2'
+        }
+
+        It 'Instance Construction - Inheritance - Can pass multiple params to BASE chain' {
+            $baseClassName = [Guid]::NewGuid().ToString()
+            $baseClass = New-PSClass $baseClassName {
+                note 'note1'
+                note 'note2'
+                constructor {
+                    param (
+                        $note1,
+                        $note2
+                    )
+
+                    $this.note1 = $note1
+                    $this.note2 = $note2
+                }
+            } -PassThru
+
+            $derivedClassName = [Guid]::NewGuid().ToString()
+            $derivedClass = New-PSClass $derivedClassName -inherit $baseClass {
+                constructor {
+                    param (
+                        $value,
+                        $value2
+                    )
+
+                    base $value $value2
+                }
+            } -PassThru
+
+            $moreDerivedClassName = [Guid]::NewGuid().ToString()
+            $moreDerivedClass = New-PSClass $moreDerivedClassName -inherit $derivedClassName {
+                constructor {
+                    param (
+                        $object1,
+                        $object2
+                    )
+
+                    base $object1 $object2
+                }
+            } -PassThru
+
+            $instance = $moreDerivedClass.New('expected1', 'expected2')
+            $instance.note1 | Should Be 'expected1'
+            $instance.note2 | Should Be 'expected2'
+        }
+
+        It 'Instance Construction - Inheritance - Base Chain handles collections properly' {
+            $baseClassName = [Guid]::NewGuid().ToString()
+            $baseClass = New-PSClass $baseClassName {
+                note 'collection1'
+                note 'collection2'
+                constructor {
+                    param (
+                        $collection1,
+                        $collection2
+                    )
+
+                    $this.collection1 = $collection1
+                    $this.collection2 = $collection2
+                }
+            } -PassThru
+
+            $derivedClassName = [Guid]::NewGuid().ToString()
+            $derivedClass = New-PSClass $derivedClassName -inherit $baseClass {
+                constructor {
+                    param (
+                        $value,
+                        $value2
+                    )
+
+                    base $value $value2
+                }
+            } -PassThru
+
+            $moreDerivedClassName = [Guid]::NewGuid().ToString()
+            $moreDerivedClass = New-PSClass $moreDerivedClassName -inherit $derivedClassName {
+                constructor {
+                    param (
+                        $object1,
+                        $object2
+                    )
+
+                    base $object1 $object2
+                }
+            } -PassThru
+
+            $expectedCollection1 = @(1,2,3)
+            $expectedCollection2 = @(1,2,3,4,5)
+
+            $instance = $moreDerivedClass.New($expectedCollection1, $expectedCollection2)
+            $instance.collection1.GetType() | Should Be ([System.Object[]])
+            $instance.collection2.GetType() | Should Be ([System.Object[]])
+
+            $instance.collection1.Count | Should Be 3
+            $instance.collection2.Count | Should Be 5
         }
     }
 
-    Context "Construction - Rainy" {
-        It "Throws when attempting to add multiple static methods with same name" {
+    Context 'Rainy' {
+        It 'Class Creation - Given existing class, throws when trying to create it again' {
+            $className = [Guid]::NewGuid().ToString()
+            $testClass = New-PSClass $className {} -PassThru
+            { New-PSClass $className {} } | Should Throw
+        }
+
+        It "Class Creation - Throws when attempting to add multiple static methods with same name" {
             $className = [Guid]::NewGuid().ToString()
             { New-PSClass $className {
                 method "testMethod" -static {}
@@ -296,7 +475,7 @@ Describe "New-PSClass" {
             } | Should Throw
         }
 
-        It "Throws when attempting to add multiple methods with same name" {
+        It "Class Creation - Throws when attempting to add multiple methods with same name" {
             $className = [Guid]::NewGuid().ToString()
             { New-PSClass $className {
                 method "testMethod" {}
@@ -305,7 +484,7 @@ Describe "New-PSClass" {
             } | Should Throw
         }
 
-        It "Throws when attempting to add multiple properties with same name" {
+        It "Class Creation - Throws when attempting to add multiple properties with same name" {
             $className = [Guid]::NewGuid().ToString()
             { New-PSClass $className {
                 property "testProp" {}
@@ -314,7 +493,7 @@ Describe "New-PSClass" {
             } | Should Throw
         }
 
-        It "Throws when attempting to add multiple notes with same name" {
+        It "Class Creation - Throws when attempting to add multiple notes with same name" {
             $className = [Guid]::NewGuid().ToString()
             { New-PSClass $className {
                 note "testNote"
@@ -323,7 +502,7 @@ Describe "New-PSClass" {
             } | Should Throw
         }
 
-        It "Throws when attempting to override a method if method does not exist" {
+        It "Class Creation - Throws when attempting to override a method if method does not exist" {
             $className = [Guid]::NewGuid().ToString()
             $testClass = New-PSClass $className {}
 
@@ -334,7 +513,7 @@ Describe "New-PSClass" {
             } | Should Throw
         }
 
-        It "Throws when attempting to override a method if params are different" {
+        It "Class Creation - Throws when attempting to override a method if params are different" {
             $className = [Guid]::NewGuid().ToString()
             $testClass = New-PSClass $className {
                 method "testMethod" {}
@@ -347,7 +526,7 @@ Describe "New-PSClass" {
             } | Should Throw
         }
 
-        It "Throws when attempting to override a property if set is defined in base and not in derived" {
+        It "Class Creation - Throws when attempting to override a property if set is defined in base and not in derived" {
             $className = [Guid]::NewGuid().ToString()
             $testClass = New-PSClass $className {
                 property "testProp" {} -Set {}
@@ -360,7 +539,7 @@ Describe "New-PSClass" {
             } | Should Throw
         }
 
-        It "Throws when attempting to define a note that already exists" {
+        It "Class Creation - Throws when attempting to define a note that already exists" {
             $className = [Guid]::NewGuid().ToString()
             $testClass = New-PSClass $className {
                 note "testNote" "base"

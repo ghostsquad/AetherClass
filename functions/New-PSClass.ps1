@@ -263,8 +263,6 @@ function PSClass_RunConstructor {
         [PSObject]$This
     )
 
-    breakpoint
-
     function Base {
         $private:p1, $private:p2, $private:p3, $private:p4, $private:p5, $private:p6, `
             $private:p7, $private:p8, $private:p9, $private:p10 = $args
