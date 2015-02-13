@@ -134,8 +134,6 @@ if(-not (Get-PSClass 'GpClass.Mock')) {
                 [func[object, bool][]]$Expectations = @()
             )
 
-            breakpoint
-
             Guard-ArgumentNotNull 'MethodName' $MethodName
 
             $member = $this._GetMemberFromOriginal($MethodName)
@@ -392,8 +390,6 @@ if(-not (Get-PSClass 'PSClass.Mock.MethodSetupInfo')) {
             )
 
             Base $Name
-
-            breakpoint
 
             [Void]$this.Expectations.AddRange($Expectations)
             $this.ExceptionToThrow = $null
