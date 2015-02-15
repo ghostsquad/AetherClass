@@ -43,8 +43,11 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Guard.cs" />
+    <Compile Include="Mock\Guard.cs" />
+    <Compile Include="Mock\ExceptionReason.cs" />
     <Compile Include="Mock\InvocationType.cs" />
+    <Compile Include="Mock\PsMockBehavior.cs" />
+    <Compile Include="Mock\PsMockException.cs" />
     <Compile Include="Mock\Range.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -57,16 +60,12 @@
     </Compile>
     <Compile Include="PSClassException.cs" />
     <Compile Include="PSClassTypeAttribute.cs" />
-    <Compile Include="Mock\PSMockException.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>PublicResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\GpClass.psm1" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it.
