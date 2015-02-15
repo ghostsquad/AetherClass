@@ -327,7 +327,7 @@ if(-not (Get-PSClass 'PSClass.Mock.SetupInfo')) {
         note 'Expectations'
         note 'Invocations'
         note 'CallbackAction'
-        note 'ReturnValue'
+        note 'Returns'
 
         constructor {
             param (
@@ -357,7 +357,7 @@ if(-not (Get-PSClass 'PSClass.Mock.SetupInfo')) {
                 [Object]$Value
             )
 
-            $this.ReturnValue = $Value
+            $this.Returns = $Value
             return $this
         }
     }
