@@ -1,3 +1,6 @@
+#TODO
+# Convert all PSClassException Messages to use GpClass.Properties.Resources
+
 function New-PSClass {
     param (
         [string]$ClassName

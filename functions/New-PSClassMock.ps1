@@ -1,3 +1,6 @@
+#TODO
+# Convert all PSMockException Messages to use GpClass.Properties.Resources
+
 if(-not (Get-PSClass 'GpClass.Mock')) {
     New-PSClass 'GpClass.Mock' {
         note '_strict' $false
