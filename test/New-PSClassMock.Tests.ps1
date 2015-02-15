@@ -79,6 +79,18 @@ Describe "New-PSClassMock" {
     }
 
     Context 'Rainy' {
+        It 'Method Setup - with No Expectations, when Verify, expect Exception' {
+            $className = [Guid]::NewGuid().ToString()
+            $testClass = New-PSClass $className {
+                method 'foo' {}
+            } -PassThru
+            $mock = New-PSClassMock $testClass
+
+            $setupInfo = $mock.Setup('foo')
+
+            { $mock.Verify('foo') } | Should Throw
+        }
+
         It 'Method Setup - Throws if method does not exist' {
 
         }
