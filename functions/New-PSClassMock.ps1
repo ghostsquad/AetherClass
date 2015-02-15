@@ -263,6 +263,9 @@ if(-not (Get-PSClass 'GpClass.Mock')) {
         }
 
         method '_FormatSetupsInfo' {
+            param (
+                [Ienumerable[psobject]]$Setups
+            )
             #var expressionSetups = setups
             #    .Select(s => s.SetupExpression.ToStringFixed() + ", " + FormatCallCount(s.CallCount))
             #    .ToArray();
@@ -273,6 +276,9 @@ if(-not (Get-PSClass 'GpClass.Mock')) {
         }
 
         method '_FormatCallCount' {
+            param (
+                [int]$CallCount
+            )
             #if (callCount == 0)
             #{
             #    return "Times.Never";
@@ -287,6 +293,9 @@ if(-not (Get-PSClass 'GpClass.Mock')) {
         }
 
         method '_FormatInvocations' {
+            param (
+                [Ienumerable[psobject]]$Invocations
+            )
             #var formattedInvocations = invocations
             #    .Select(i => i.Format())
             #    .ToArray();
