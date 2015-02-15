@@ -78,9 +78,6 @@ SOFTWARE.
                         'New-PSClassInstance'
                         'New-PSClassMock'
                         'ObjectIs-PSClassInstance'
-                        'Setup-Mock'
-                        'Setup-MockReturn'
-                        'Setup-MockCallback'
                         )
 
              FileList = @(
@@ -107,9 +104,6 @@ SOFTWARE.
                         'functions\New-PSClassInstance.ps1'
                         'functions\New-PSClassMock.ps1'
                         'functions\ObjectIs-PSClassInstance.ps1'
-                        'functions\Set-Mock.ps1'
-                        'functions\Set-MockReturn.ps1'
-                        'functions\Set-MockCallback.ps1'
                         )
 
           PrivateData = @{

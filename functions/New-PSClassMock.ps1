@@ -115,7 +115,7 @@ if(-not (Get-PSClass 'GpClass.Mock')) {
             $this.Object = $theMockObject
         }
 
-        method _GetMemberFromOriginal {
+        method '_GetMemberFromOriginal' {
             param (
                 [string]$memberName
             )
@@ -255,7 +255,7 @@ if(-not (Get-PSClass 'GpClass.Mock')) {
             #TODO
         }
 
-        method _ThrowVerifyException {
+        method '_ThrowVerifyException' {
             param (
                 [string]$MemberName,
                 [string]$FailMessage,
@@ -275,19 +275,19 @@ if(-not (Get-PSClass 'GpClass.Mock')) {
             throw (New-Object PSMockException)
         }
 
-        method _FormatSetupsInfo {
+        method '_FormatSetupsInfo' {
 
         }
 
-        method _FormatCallCount {
+        method '_FormatCallCount' {
 
         }
 
-        method _FormatInvocationsInfo {
+        method '_FormatInvocationsInfo' {
 
         }
 
-        method _ConvertExpectationsToExpressionString {
+        method '_ConvertExpectationsToExpressionString' {
             [cmdletbinding()]
             param (
                 [func[object, bool][]]$Expectations = @()
@@ -327,7 +327,7 @@ if(-not (Get-PSClass 'PSClass.Mock.SetupInfo')) {
         note 'Expectations'
         note 'Invocations'
         note 'CallbackAction'
-        note 'Returns'
+        note 'ReturnValue'
 
         constructor {
             param (
@@ -357,7 +357,7 @@ if(-not (Get-PSClass 'PSClass.Mock.SetupInfo')) {
                 [Object]$Value
             )
 
-            $this.Returns = $Value
+            $this.ReturnValue = $Value
             return $this
         }
     }

@@ -38,9 +38,6 @@ $here = Split-Path -Parent $MyInvocation.MyCommand.Path
 . $here\functions\New-PSClassInstance.ps1
 . $here\functions\New-PSClassMock.ps1
 . $here\functions\ObjectIs-PSClassInstance.ps1
-. $here\functions\Setup-Mock.ps1
-. $here\functions\Setup-MockCallback.ps1
-. $here\functions\Setup-MockReturn.ps1
 
 Export-ModuleMember -Function ItIs
 Export-ModuleMember -Function *-*
