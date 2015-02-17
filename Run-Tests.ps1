@@ -2,7 +2,8 @@ param (
     [string]$TestName = "*",
     [switch]$Debug,
     [switch]$CurrentContext = $false,
-    [switch]$Clean
+    [switch]$Clean,
+    [switch]$PassThru
 )
 $ErrorActionPreference = "Stop"
 if($Debug){
@@ -20,7 +21,7 @@ if((Test-Path (Join-Path $here 'build.config.ps1'))) {
 
 if($currentContext) {
     Import-Module Pester
-    Invoke-Pester -TestName $TestName -Path $here
+    Invoke-Pester -TestName $TestName -Path $here -PassThru:$PassThru
 } else {
     if($Debug) {
         $debugPrefStr = '$global:DebugPreference = ''Continue'''

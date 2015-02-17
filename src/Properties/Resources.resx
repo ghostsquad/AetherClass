@@ -286,4 +286,28 @@ Expected invocation on the mock once, but was {4} times: {1}</value>
   <data name="PropertyGetNotFound" xml:space="preserve">
     <value>Property {0}.{1} does not have a getter.</value>
   </data>
+  <data name="AtLeast" xml:space="preserve">
+    <value>At Least {0} times</value>
+  </data>
+  <data name="AtLeastOnce" xml:space="preserve">
+    <value>At Least Once</value>
+  </data>
+  <data name="AtMost" xml:space="preserve">
+    <value>At Most {0} times</value>
+  </data>
+  <data name="AtMostOnce" xml:space="preserve">
+    <value>At Most Once</value>
+  </data>
+  <data name="Between" xml:space="preserve">
+    <value>Between {0} and {1} times ({2})</value>
+  </data>
+  <data name="Exactly" xml:space="preserve">
+    <value>Exactly {0} times</value>
+  </data>
+  <data name="Never" xml:space="preserve">
+    <value>Never</value>
+  </data>
+  <data name="Once" xml:space="preserve">
+    <value>Once</value>
+  </data>
 </root>

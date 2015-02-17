@@ -88,6 +88,51 @@ namespace GpClass.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to At Least {0} times.
+        /// </summary>
+        public static string AtLeast {
+            get {
+                return ResourceManager.GetString("AtLeast", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to At Least Once.
+        /// </summary>
+        public static string AtLeastOnce {
+            get {
+                return ResourceManager.GetString("AtLeastOnce", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to At Most {0} times.
+        /// </summary>
+        public static string AtMost {
+            get {
+                return ResourceManager.GetString("AtMost", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to At Most Once.
+        /// </summary>
+        public static string AtMostOnce {
+            get {
+                return ResourceManager.GetString("AtMostOnce", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Between {0} and {1} times ({2}).
+        /// </summary>
+        public static string Between {
+            get {
+                return ResourceManager.GetString("Between", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Can&apos;t set return value for void method {0}..
         /// </summary>
         public static string CantSetReturnValueForVoid {
@@ -129,6 +174,15 @@ namespace GpClass.Properties {
         public static string EventNofFound {
             get {
                 return ResourceManager.GetString("EventNofFound", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Exactly {0} times.
+        /// </summary>
+        public static string Exactly {
+            get {
+                return ResourceManager.GetString("Exactly", resourceCulture);
             }
         }
         
@@ -237,6 +291,15 @@ namespace GpClass.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Never.
+        /// </summary>
+        public static string Never {
+            get {
+                return ResourceManager.GetString("Never", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to {0}
         ///Expected invocation on the mock at least {2} times, but was {4} times: {1}.
         /// </summary>
@@ -341,6 +404,15 @@ namespace GpClass.Properties {
         public static string ObjectInstanceNotMock {
             get {
                 return ResourceManager.GetString("ObjectInstanceNotMock", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Once.
+        /// </summary>
+        public static string Once {
+            get {
+                return ResourceManager.GetString("Once", resourceCulture);
             }
         }
         

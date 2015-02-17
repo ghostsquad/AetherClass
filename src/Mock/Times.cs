@@ -16,15 +16,19 @@
 
         private readonly int to;
 
+        private readonly string stringRepresentation;
+
         #endregion
 
         #region Constructors and Destructors
 
-        private Times(Func<int, bool> evaluator, int from, int to, string messageFormat) {
+        private Times(Func<int, bool> evaluator, int from, int to, string messageFormat, string stringRepresentation)
+        {
             this.evaluator = evaluator;
             this.from = from;
             this.to = to;
             this.messageFormat = messageFormat;
+            this.stringRepresentation = stringRepresentation;
         }
 
         #endregion
@@ -35,24 +39,34 @@
         public static Times AtLeast(int callCount) {
             Guard.NotOutOfRangeInclusive(() => callCount, callCount, 1, int.MaxValue);
 
-            return new Times(c => c >= callCount, callCount, int.MaxValue, Resources.NoMatchingCallsAtLeast);
+            return new Times(
+                c => c >= callCount,
+                callCount,
+                int.MaxValue,
+                Resources.NoMatchingCallsAtLeast,
+                string.Format(Resources.AtLeast, callCount));
         }
 
         /// <include file='Times.xdoc' path='docs/doc[@for="Times.AtLeastOnce"]/*'/>
         public static Times AtLeastOnce() {
-            return new Times(c => c >= 1, 1, int.MaxValue, Resources.NoMatchingCallsAtLeastOnce);
+            return new Times(c => c >= 1, 1, int.MaxValue, Resources.NoMatchingCallsAtLeastOnce, Resources.AtLeastOnce);
         }
 
         /// <include file='Times.xdoc' path='docs/doc[@for="Times.AtMost"]/*'/>
         public static Times AtMost(int callCount) {
             Guard.NotOutOfRangeInclusive(() => callCount, callCount, 0, int.MaxValue);
 
-            return new Times(c => c >= 0 && c <= callCount, 0, callCount, Resources.NoMatchingCallsAtMost);
+            return new Times(
+                c => c >= 0 && c <= callCount,
+                0,
+                callCount,
+                Resources.NoMatchingCallsAtMost,
+                string.Format(Resources.AtMost, callCount));
         }
 
         /// <include file='Times.xdoc' path='docs/doc[@for="Times.AtMostOnce"]/*'/>
         public static Times AtMostOnce() {
-            return new Times(c => c >= 0 && c <= 1, 0, 1, Resources.NoMatchingCallsAtMostOnce);
+            return new Times(c => c >= 0 && c <= 1, 0, 1, Resources.NoMatchingCallsAtMostOnce, Resources.AtMostOnce);
         }
 
         /// <include file='Times.xdoc' path='docs/doc[@for="Times.Between"]/*'/>
@@ -67,7 +81,8 @@
                     c => c > callCountFrom && c < callCountTo,
                     callCountFrom,
                     callCountTo,
-                    Resources.NoMatchingCallsBetweenExclusive);
+                    Resources.NoMatchingCallsBetweenExclusive,
+                    string.Format(Resources.Between, callCountFrom, callCountTo, rangeKind));
             }
 
             Guard.NotOutOfRangeInclusive(() => callCountFrom, callCountFrom, 0, callCountTo);
@@ -75,24 +90,30 @@
                 c => c >= callCountFrom && c <= callCountTo,
                 callCountFrom,
                 callCountTo,
-                Resources.NoMatchingCallsBetweenInclusive);
+                Resources.NoMatchingCallsBetweenInclusive,
+                string.Format(Resources.Between, callCountFrom, callCountTo, rangeKind));
         }
 
         /// <include file='Times.xdoc' path='docs/doc[@for="Times.Exactly"]/*'/>
         public static Times Exactly(int callCount) {
             Guard.NotOutOfRangeInclusive(() => callCount, callCount, 0, int.MaxValue);
 
-            return new Times(c => c == callCount, callCount, callCount, Resources.NoMatchingCallsExactly);
+            return new Times(
+                c => c == callCount,
+                callCount,
+                callCount,
+                Resources.NoMatchingCallsExactly,
+                string.Format(Resources.Exactly, callCount));
         }
 
         /// <include file='Times.xdoc' path='docs/doc[@for="Times.Never"]/*'/>
         public static Times Never() {
-            return new Times(c => c == 0, 0, 0, Resources.NoMatchingCallsNever);
+            return new Times(c => c == 0, 0, 0, Resources.NoMatchingCallsNever, Resources.Never);
         }
 
         /// <include file='Times.xdoc' path='docs/doc[@for="Times.Once"]/*'/>
         public static Times Once() {
-            return new Times(c => c == 1, 1, 1, Resources.NoMatchingCallsOnce);
+            return new Times(c => c == 1, 1, 1, Resources.NoMatchingCallsOnce, Resources.Once);
         }
 
         /// <include file='Times.xdoc' path='docs/doc[@for="Times.op_Equality"]/*'/>
@@ -133,6 +154,10 @@
                 this.from,
                 this.to,
                 callCount);
+        }
+
+        public override string ToString() {
+            return this.stringRepresentation;
         }
 
         public bool Verify(int callCount) {

@@ -18,6 +18,7 @@ $here = Split-Path -Parent $MyInvocation.MyCommand.Path
 [Void](Add-TypeAccelerator -Name Times -Type ([GpClass.Mock.Times]))
 [Void](Add-TypeAccelerator -Name Range -Type ([GpClass.Mock.Range]))
 [Void](Add-TypeAccelerator -Name PSMockException -Type ([GpClass.Mock.PSMockException]))
+[Void](Add-TypeAccelerator -Name ExceptionReason -Type ([GpClass.Mock.ExceptionReason]))
 
 . $here\functions\Attach-PSClassConstructor.ps1
 . $here\functions\Attach-PSClassMethod.ps1
@@ -38,6 +39,8 @@ $here = Split-Path -Parent $MyInvocation.MyCommand.Path
 . $here\functions\New-PSClassInstance.ps1
 . $here\functions\New-PSClassMock.ps1
 . $here\functions\ObjectIs-PSClassInstance.ps1
+. $here\functions\ConvertExpectationsToExpressionString.ps1
+. $here\functions\FormatCallCount.ps1
 
 Export-ModuleMember -Function ItIs
 Export-ModuleMember -Function *-*

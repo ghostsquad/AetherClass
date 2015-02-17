@@ -4,6 +4,13 @@ function ItIs-Any {
         [Type]$Type
     )
 
+    ifdebug {
+        'itis-any'
+        $cmdFrame = (Get-PSCallStack)[1]
+        $cmdExpression = $cmdFrame.Command + $cmdFrame.Arguments
+        $cmdExpression
+    }
+
     Guard-ArgumentNotNull 'Type' $Type
 
     $func = {

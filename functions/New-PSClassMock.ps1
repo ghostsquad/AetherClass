@@ -27,28 +27,46 @@ if(-not (Get-PSClass 'GpClass.Mock')) {
             $mockDefinition = $this
 
             foreach($methodName in $Class.__Methods.Keys) {
-                $this._mockedMethods[$methodName] = New-PSClassInstance 'PSClass.Mock.MemberInfo'
+                $this._mockedMethods[$methodName] = New-PSClassInstance 'GpClass.Mock.MemberInfo'
 
                 $mockedMethodScript = {
                     #because $this & $args are automatic variables,
                     #the automatic version of the variable will
                     #override the any variable with the same name that may be captured from GetNewClosure()
                     $callContext = New-PSClassInstance 'GpClass.Mock.CallContext' -ArgumentList @(
+                        $mockDefinition,
+                        $methodName,
                         [InvocationType]::MethodCall,
                         $Args
                     )
 
-                    $this.____mock____._mockedMethods[$methodName].Calls.Add($callContext)
-                    $methodSetupInfo = $this.____mock____._GetMethodSetupInfosThatMetExpectations($true)
+                    $mockDefinition._mockedMethods[$methodName].Calls.Add($callContext)
+                    $methodSetupInfo = $mockDefinition._GetMethodSetupInfosThatMetExpectations($methodName, $true)
                     if($methodSetupInfo -ne $null) {
-                        $callContext.SetupInfo = $methodSetupInfo
                         [Void]$methodSetupInfo.Invocations.Add($callContext)
                         if($methodSetupInfo.ExceptionToThrow -ne $null) {
                             throw $methodSetupInfo.ExceptionToThrow
                         }
 
-                        [Void]$methodSetupInfo.InvokeMethodScript($Args)
-                        [Void]$methodSetupInfo.CallBackAction.Invoke($Args)
+                        $private:p1, $private:p2, $private:p3, $private:p4, $private:p5, $private:p6, `
+                            $private:p7, $private:p8, $private:p9, $private:p10 = $args
+                        switch($args.Count) {
+                            0 {  [Void]($methodSetupInfo.CallBackAction.InvokeReturnAsIs()) }
+                            1 {  [Void]($methodSetupInfo.CallBackAction.InvokeReturnAsIs($p1)) }
+                            2 {  [Void]($methodSetupInfo.CallBackAction.InvokeReturnAsIs($p1, $p2)) }
+                            3 {  [Void]($methodSetupInfo.CallBackAction.InvokeReturnAsIs($p1, $p2, $p3)) }
+                            4 {  [Void]($methodSetupInfo.CallBackAction.InvokeReturnAsIs($p1, $p2, $p3, $p4)) }
+                            5 {  [Void]($methodSetupInfo.CallBackAction.InvokeReturnAsIs($p1, $p2, $p3, $p4, $p5)) }
+                            6 {  [Void]($methodSetupInfo.CallBackAction.InvokeReturnAsIs($p1, $p2, $p3, $p4, $p5, $p6)) }
+                            7 {  [Void]($methodSetupInfo.CallBackAction.InvokeReturnAsIs($p1, $p2, $p3, $p4, $p5, $p6, $p7)) }
+                            8 {  [Void]($methodSetupInfo.CallBackAction.InvokeReturnAsIs($p1, $p2, $p3, $p4, $p5, $p6, $p7, $p8)) }
+                            9 {  [Void]($methodSetupInfo.CallBackAction.InvokeReturnAsIs($p1, $p2, $p3, $p4, $p5, $p6, $p7, $p8, $p9)) }
+                            10 { [Void]($methodSetupInfo.CallBackAction.InvokeReturnAsIs($p1, $p2, $p3, $p4, $p5, $p6, $p7, $p8, $p9, $p10)) }
+                            default {
+                                throw (new-object PSClassException("PSClassMock Callbacks do not support more than 10 arguments."))
+                            }
+                        }
+
                         return $methodSetupInfo.ReturnValue
                     }
 
@@ -66,21 +84,22 @@ if(-not (Get-PSClass 'GpClass.Mock')) {
             $notesAndPropertyKeys.AddRange($Class.__Notes.Keys)
 
             foreach($propertyName in $notesAndPropertyKeys) {
-                $this._mockedProperties[$propertyName] = New-PSClassInstance 'PSClass.Mock.MemberInfo'
+                $this._mockedProperties[$propertyName] = New-PSClassInstance 'GpClass.Mock.MemberInfo'
 
                 $mockedPropertyGetScript = {
                     #because $this & $args are automatic variables,
                     #the automatic version of the variable will
                     #override the any variable with the same name that may be captured from GetNewClosure()
                     $callContext = New-PSClassInstance 'GpClass.Mock.CallContext' -ArgumentList @(
+                        $mockDefinition,
+                        $propertyName,
                         [InvocationType]::PropertyGet
                     )
-                    $this.____mock____._mockedProperties[$propertyName].Calls.Add($callContext)
+                    $mockDefinition._mockedProperties[$propertyName].Calls.Add($callContext)
 
                     $propertySetupInfoCollection = $mockDefinition._mockedProperties[$propertyName].Setups
-                    $condition = {ObjectIs-PSClassInstance $_ 'PSClass.Mock.PropertySetupInfo'}
+                    $condition = {ObjectIs-PSClassInstance $_ 'GpClass.Mock.PropertySetupInfo'}
                     if(Where-Any -InputObject $propertySetupInfoCollection -Condition $condition) {
-                        $callContext.SetupInfo = $propertySetupInfoCollection[0]
                         [Void]$propertySetupInfo.Invocations.Add($callContext)
                         return $propertySetupInfo.ReturnValue
                     }
@@ -96,15 +115,17 @@ if(-not (Get-PSClass 'GpClass.Mock')) {
                     #the automatic version of the variable will
                     #override the any variable with the same name that may be captured from GetNewClosure()
                     $callContext = New-PSClassInstance 'GpClass.Mock.CallContext' -ArgumentList @(
+                        $mockDefinition,
+                        $propertyName,
                         [InvocationType]::PropertySet,
                         $Args[0]
                     )
-                    $this.____mock____._mockedProperties[$propertyName].Calls.Add($callContext)
+
+                    $mockDefinition._mockedProperties[$propertyName].Calls.Add($callContext)
 
                     $propertySetupInfoCollection = $mockDefinition._mockedProperties[$propertyName].Setups
-                    $condition = {ObjectIs-PSClassInstance $_ 'PSClass.Mock.PropertySetupInfo'}
+                    $condition = {ObjectIs-PSClassInstance $_ 'GpClass.Mock.PropertySetupInfo'}
                     if(Where-Any -InputObject $propertySetupInfoCollection -Condition $condition) {
-                        $callContext.SetupInfo = $propertySetupInfoCollection[0]
                         [Void]$propertySetupInfo.Invocations.Add($callContext)
                         return $propertySetupInfo.ReturnValue
                     }
@@ -115,8 +136,7 @@ if(-not (Get-PSClass 'GpClass.Mock')) {
                     }
                 }.GetNewClosure()
 
-                #Attach-PSProperty $theMockObject $propertyName $mockedPropertyGetScript $mockedPropertySetScript
-                Attach-PSProperty $theMockObject $propertyName {} {}
+                Attach-PSProperty $theMockObject $propertyName $mockedPropertyGetScript $mockedPropertySetScript
             }
 
             $this.Object = $theMockObject
@@ -149,12 +169,13 @@ if(-not (Get-PSClass 'GpClass.Mock')) {
                 throw (new-object PSMockException(("Member {0} is not a PSScriptMethod." -f $MethodName)))
             }
 
-            $setupInfo = New-PSClassInstance 'PSClass.Mock.MethodSetupInfo' -ArgumentList @(
+            $setupInfo = New-PSClassInstance 'GpClass.Mock.MethodSetupInfo' -ArgumentList @(
+                $this,
                 $MethodName,
                 $Expectations
             )
 
-            [Void]$this._mockedMethods[$MethodName].Add($setupInfo)
+            [Void]$this._mockedMethods[$MethodName].Setups.Add($setupInfo)
 
             return $setupInfo
         }
@@ -184,7 +205,8 @@ if(-not (Get-PSClass 'GpClass.Mock')) {
                 throw (new-object PSMockException($msg))
             }
 
-            $setupInfo = New-PSClassInstance 'PSClass.Mock.PropertySetupInfo' -ArgumentList @(
+            $setupInfo = New-PSClassInstance 'GpClass.Mock.PropertySetupInfo' -ArgumentList @(
+                $this,
                 $PropertyName,
                 $DefaultValue
             )
@@ -206,9 +228,15 @@ if(-not (Get-PSClass 'GpClass.Mock')) {
             Guard-ArgumentNotNull 'Expectations' $Expectations
             Guard-ArgumentNotNull 'Times' $Times
 
-            $callCount = ($this._GetMethodSetupInfosThatMetExpectations($false)).Count
+            $callCount = ($this._GetMethodSetupInfosThatMetExpectations($methodName, $false)).Count
 
-            if(-not $Times.Verify($callCountThatMetExpectations)) {
+            ifdebug {
+                'callCount: ' + $callCount
+                'times: ' + $Times.ToString()
+                'timesverify: ' + $Times.Verify($callCount)
+            }
+
+            if(-not $Times.Verify($callCount)) {
                 $this._ThrowVerifyException($MethodName,
                     $FailMessage,
                     $Expectations,
@@ -249,14 +277,14 @@ if(-not (Get-PSClass 'GpClass.Mock')) {
             param (
                 [string]$MemberName,
                 [string]$FailMessage,
-                [func[object, bool][]]$Expectations = (New-Object 'func[object, bool][]'(0)),
-                [Ienumerable[psobject]]$Setups,
-                [Ienumerable[psobject]]$ActualCalls,
+                [func[object, bool][]]$Expectations = @(),
+                [System.Collections.IEnumerable]$Setups,
+                [System.Collections.IEnumerable]$ActualCalls,
                 [Times]$Times,
                 [int]$CallCount
             )
 
-            $Expression = $MemberName + "(" + $this._ConvertExpectationsToExpressionString($Expectations) + ")"
+            $Expression = $MemberName + "(" + (ConvertExpectationsToExpressionString $Expectations)+ ")"
 
             [string]$msg = $Times.GetExceptionMessage($FailMessage, $Expression, $CallCount) + `
                 [environment]::NewLine + $this._FormatSetupsInfo($Setups) + `
@@ -267,86 +295,97 @@ if(-not (Get-PSClass 'GpClass.Mock')) {
 
         method '_FormatSetupsInfo' {
             param (
-                [Ienumerable[psobject]]$Setups
+                [System.Collections.IEnumerable]$Setups
             )
-            #var expressionSetups = setups
-            #    .Select(s => s.SetupExpression.ToStringFixed() + ", " + FormatCallCount(s.CallCount))
-            #    .ToArray();
 
-            #return expressionSetups.Length == 0 ?
-            #    "No setups configured." :
-            #    Environment.NewLine + "Configured setups:" + Environment.NewLine + string.Join(Environment.NewLine, expressionSetups);
-        }
+            $expressionSetups = @($Setups | %{$_.Format()})
 
-        method '_FormatCallCount' {
-            param (
-                [int]$CallCount
-            )
-            #if (callCount == 0)
-            #{
-            #    return "Times.Never";
-            #}
-
-            #if (callCount == 1)
-            #{
-            #    return "Times.Once";
-            #}
-
-            #return string.Format(CultureInfo.CurrentCulture, "Times.Exactly({0})", callCount);
+            return (?: { $expressionSetups.Count -eq 0 } `
+               { "No setups configured." } `
+               { [Environment]::NewLine `
+                    + "Configured setups:" `
+                    + [Environment]::NewLine `
+                    + [string]::Join([Environment]::NewLine, $expressionSetups) })
         }
 
         method '_FormatInvocations' {
             param (
-                [Ienumerable[psobject]]$Invocations
-            )
-            #var formattedInvocations = invocations
-            #    .Select(i => i.Format())
-            #    .ToArray();
-
-            #return formattedInvocations.Length == 0 ?
-            #    "No invocations performed." :
-            #    Environment.NewLine + "Performed invocations:" + Environment.NewLine + string.Join(Environment.NewLine, formattedInvocations);
-        }
-
-        method '_ConvertExpectationsToExpressionString' {
-            [cmdletbinding()]
-            param (
-                [func[object, bool][]]$Expectations = @()
+                [System.Collections.IEnumerable]$Invocations
             )
 
-            $FuncStrings = @()
-            foreach($expectation in $Expectations) {
-                $FuncStrings += $expectation.Target.Constants[0].ToString().Trim("`n").Trim()
-            }
+            $formattedInvocations = @($Invocations | %{$_.Format()})
 
-            return [string]::Join($FuncStrings, ", ")
+            return (?: { $formattedInvocations.Count -eq 0 } `
+               { "No invocations performed." } `
+               { [Environment]::NewLine `
+                    + "Performed invocations:" `
+                    + [Environment]::NewLine `
+                    + [string]::Join([Environment]::NewLine, $formattedInvocations) })
         }
 
         method '_GetMethodSetupInfosThatMetExpectations' {
             param (
+                $methodName,
                 $StopOnFirst = $false
             )
 
             $MetExpectationsSetupInfoCollection = @()
 
             $methodSetupInfoCollection = $this._mockedMethods[$methodName].Setups
-            foreach($methodSetupInfo in $methodSetupInfoCollection) {
-                $invocationMetExpections = $false
+            $callCollection = $this._mockedMethods[$methodName].Calls
 
-                if($methodSetupInfo.Expectations.Count -eq $Args.Count) {
-                    for($i = 0; $i -lt $Args.Count; $i++) {
-                        $invocationMetExpections = $methodSetupInfo.Expectations[$i].Invoke($Args[$i])
-                        if(-not $invocationMetExpections) {
-                            break;
+            #breakpoint
+            ifdebug {
+                'setupct: ' + $methodSetupInfoCollection.count
+                'callct: ' + $callCollection.count
+            }
+
+            foreach($methodSetupInfo in $methodSetupInfoCollection) {
+                foreach($call in $callCollection) {
+                    $invocationMetExpectations = $false
+
+                    ifdebug {
+                        'expct: ' + $methodSetupInfo.Expectations.Count
+                        'argct: ' + $call.Arguments.Count
+                    }
+
+                    if($methodSetupInfo.Expectations.Count -eq 0) {
+                        $invocationMetExpectations = $true
+                        ifdebug {
+                            'expectations met because expectations.count == 0'
+                        }
+                    } elseif($methodSetupInfo.Expectations.Count -le $call.Arguments.Count) {
+                        for($i = 0; $i -lt $call.Arguments.Count; $i++) {
+                            if($i -ge $methodSetupInfo.Expectations.Count) {
+                                ifdebug {
+                                    'expectations met because more args than expectations'
+                                }
+                                $invocationMetExpectations = $true
+                                break;
+                            }
+
+                            $invocationMetExpectations = $methodSetupInfo.Expectations[$i].Invoke($call.Arguments[$i])
+                            if(-not $invocationMetExpectations) {
+                                ifdebug {
+                                    'expectation failed'
+                                }
+                                break;
+                            }
                         }
                     }
-                }
 
-                if($StopOnFirst) {
-                    return $methodSetupInfo
-                }
+                    if($invocationMetExpectations) {
+                        if($StopOnFirst) {
+                            return $methodSetupInfo
+                        }
 
-                $MetExpectationsSetupInfoCollection += $methodSetupInfo
+                        $MetExpectationsSetupInfoCollection += $methodSetupInfo
+                    }
+                }
+            }
+
+            ifdebug {
+                'MetExpectationsSetupInfoCollection.count: ' + $MetExpectationsSetupInfoCollection.count
             }
 
             if($MetExpectationsSetupInfoCollection.Count -gt 1) {
@@ -358,8 +397,8 @@ if(-not (Get-PSClass 'GpClass.Mock')) {
     }
 }
 
-if(-not (Get-PSClass 'PSClass.Mock.MemberInfo')) {
-    New-PSClass 'PSClass.Mock.MemberInfo' {
+if(-not (Get-PSClass 'GpClass.Mock.MemberInfo')) {
+    New-PSClass 'GpClass.Mock.MemberInfo' {
         note Setups
         note Calls
 
@@ -370,30 +409,46 @@ if(-not (Get-PSClass 'PSClass.Mock.MemberInfo')) {
     }
 }
 
-if(-not (Get-PSClass 'PSClass.Mock.SetupInfo')) {
-    New-PSClass 'PSClass.Mock.SetupInfo' {
-        note 'Name'
+if(-not (Get-PSClass 'GpClass.Mock.SetupInfo')) {
+    New-PSClass 'GpClass.Mock.SetupInfo' {
         note 'Mock'
+        note 'Name'
         note 'Expectations'
         note 'Invocations'
+        note 'InvocationType'
         note 'CallbackAction'
         note 'ReturnValue'
+        note 'CallCount'
 
         constructor {
             param (
-                $Name
+                $Mock,
+                $Name,
+                $InvocationType
             )
 
+            $this.Mock = $Mock
             $this.Name = $Name
+            $this.InvocationType = $InvocationType
             $this.Expectations = New-Object 'System.Collections.Generic.List[func[object, bool]]'
-            [Action]$this.CallbackAction = {}
+            [Scriptblock]$this.CallbackAction = {}
             $this.Invocations = New-Object System.Collections.ArrayList
             $this.ReturnValue = $null
         }
 
+        method 'Format' {
+            if ($this.InvocationType -eq [InvocationType]::PropertySet) {
+                return ($this.Mock._originalClass.__ClassName + "." + `
+                    $this.Name + " = " + (ConvertExpectationsToExpressionString $this.Expectations))
+            }
+
+            return ($this.Mock._originalClass.__ClassName + "." + $this.Name + "(" + `
+                (ConvertExpectationsToExpressionString $this.Expectations) + ")")
+        }
+
         method 'CallBack' {
             param (
-                [Action]$Action
+                [Scriptblock]$Action
             )
 
             Guard-ArgumentNotNull 'Action' $Action
@@ -413,15 +468,16 @@ if(-not (Get-PSClass 'PSClass.Mock.SetupInfo')) {
     }
 }
 
-if(-not (Get-PSClass 'PSClass.Mock.PropertySetupInfo')) {
-    New-PSClass 'PSClass.Mock.PropertySetupInfo' -Inherit 'PSClass.Mock.SetupInfo' {
+if(-not (Get-PSClass 'GpClass.Mock.PropertySetupInfo')) {
+    New-PSClass 'GpClass.Mock.PropertySetupInfo' -Inherit 'GpClass.Mock.SetupInfo' {
         constructor {
             param (
+                $Mock,
                 $Name,
                 $DefaultValue
             )
 
-            Base $Name
+            Base $Mock $Name [InvocationType]::PropertySet
 
             [Void]$this.Expectations.Add((ItIs-Any ([object])))
             $this.ReturnValue = $DefaultValue
@@ -429,44 +485,21 @@ if(-not (Get-PSClass 'PSClass.Mock.PropertySetupInfo')) {
     }
 }
 
-if(-not (Get-PSClass 'PSClass.Mock.MethodSetupInfo')) {
-    New-PSClass 'PSClass.Mock.MethodSetupInfo' -Inherit 'PSClass.Mock.SetupInfo' {
+if(-not (Get-PSClass 'GpClass.Mock.MethodSetupInfo')) {
+    New-PSClass 'GpClass.Mock.MethodSetupInfo' -Inherit 'GpClass.Mock.SetupInfo' {
         note 'ExceptionToThrow'
 
         constructor {
             param (
+                $Mock,
                 $Name,
                 [func[object, bool][]]$Expectations = @()
             )
 
-            Base $Name
+            Base $Mock $Name [InvocationType]::MethodCall
 
             [Void]$this.Expectations.AddRange($Expectations)
             $this.ExceptionToThrow = $null
-        }
-
-        method 'InvokeMethodScript' {
-            param($theArgs)
-
-            $private:p1, $private:p2, $private:p3, $private:p4, $private:p5, $private:p6, `
-                $private:p7, $private:p8, $private:p9, $private:p10 = $theArgs
-            switch($theArgs.Count) {
-                0 {  return $this.SetupScript.InvokeReturnAsIs() }
-                1 {  return $this.SetupScript.InvokeReturnAsIs($p1) }
-                2 {  return $this.SetupScript.InvokeReturnAsIs($p1, $p2) }
-                3 {  return $this.SetupScript.InvokeReturnAsIs($p1, $p2, $p3) }
-                4 {  return $this.SetupScript.InvokeReturnAsIs($p1, $p2, $p3, $p4) }
-                5 {  return $this.SetupScript.InvokeReturnAsIs($p1, $p2, $p3, $p4, $p5) }
-                6 {  return $this.SetupScript.InvokeReturnAsIs($p1, $p2, $p3, $p4, $p5, $p6) }
-                7 {  return $this.SetupScript.InvokeReturnAsIs($p1, $p2, $p3, $p4, $p5, $p6, $p7) }
-                8 {  return $this.SetupScript.InvokeReturnAsIs($p1, $p2, $p3, $p4, $p5, $p6, $p7, $p8) }
-                9 {  return $this.SetupScript.InvokeReturnAsIs($p1, $p2, $p3, $p4, $p5, $p6, $p7, $p8, $p9) }
-                10 { return $this.SetupScript.InvokeReturnAsIs($p1, $p2, $p3, $p4, $p5, $p6, $p7, $p8, $p9, $p10) }
-                default {
-                    $msg = "PSClassMock does not support more than 10 arguments for a method mock."
-                    throw (new-object PSMockException($msg))
-                }
-            }
         }
 
         method 'Throws' {
@@ -482,35 +515,39 @@ if(-not (Get-PSClass 'PSClass.Mock.MethodSetupInfo')) {
     }
 }
 
-if(-not (Get-PSClass 'PSClass.Mock.CallContext')) {
-    New-PSClass 'PSClass.Mock.CallContext' {
+if(-not (Get-PSClass 'GpClass.Mock.CallContext')) {
+    New-PSClass 'GpClass.Mock.CallContext' {
+        note Mock
+        note MemberName
         note InvocationType
         note Arguments
-        note SetupInfo
 
         constructor {
             param (
+                $Mock,
+                $MemberName,
                 [InvocationType]$InvocationType,
                 [object[]]$Arguments = @()
             )
 
+            $this.Mock = $Mock
+            $this.MemberName = $MemberName
             $this.InvocationType = $InvocationType
             $this.Arguments = $Arguments
         }
 
         method 'Format' {
             if ($this.InvocationType -eq [InvocationType]::PropertyGet) {
-                return $this.SetupInfo.Mock._originalClass.__ClassName + "." + $this.SetupInfo.Name;
+                return $this.Mock._originalClass.__ClassName + "." + $this.MemberName;
             }
 
-            if ($this.InvocationType -eq [InvocationType]::PropertySet)
-            {
-                return $this.SetupInfo.Mock._originalClass.__ClassName + "." +
-                    $this.SetupInfo.Name + " = " + $this.Arguments[0]
+            if ($this.InvocationType -eq [InvocationType]::PropertySet) {
+                return ($this.Mock._originalClass.__ClassName + "." + `
+                    $this.MemberName + " = " + $this.Arguments[0])
             }
 
-            return $this.SetupInfo.Mock._originalClass.__ClassName + "." + $this.SetupInfo.Name; + "(" +
-                [string]::Join(", ", $this.Arguments) + ")";
+            return ($this.Mock._originalClass.__ClassName + "." + $this.MemberName + "(" + `
+                [string]::Join(", ", $this.Arguments) + ")")
         }
     }
 }

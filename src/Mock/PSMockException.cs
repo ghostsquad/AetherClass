@@ -34,19 +34,19 @@
         public PsMockException(
             ExceptionReason reason,
             PsMockBehavior behavior,
-            ICallContext invocation,
+            //ICallContext invocation,
             ErrorRecord errorRecord)
-            : this(reason, behavior, invocation, errorRecord, Resources.ResourceManager.GetString(reason.ToString())) {
+            : this(reason, behavior, errorRecord, Resources.ResourceManager.GetString(reason.ToString())) {
         }
 
         public PsMockException(
             ExceptionReason reason,
             PsMockBehavior behavior,
-            ICallContext invocation,
+            //ICallContext invocation,
             ErrorRecord errorRecord,
             string message)
 
-            : base(GetMessage(behavior, invocation, message)) {
+            : base(GetMessage(behavior, message)) {
             this.reason = reason;
             this.ErrorRecord = this.ErrorRecord;
         }
@@ -71,11 +71,14 @@
             }
         }
 
-        private static string GetMessage(PsMockBehavior behavior, ICallContext invocation, string message) {
+        private static string GetMessage(PsMockBehavior behavior,
+            //ICallContext invocation,
+            string message) {
+
             return string.Format(
                 CultureInfo.CurrentCulture,
                 Resources.MockExceptionMessage,
-                invocation.Format(),
+                //invocation.Format(),
                 behavior,
                 message);
         }
