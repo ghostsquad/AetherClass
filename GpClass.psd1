@@ -104,7 +104,6 @@ SOFTWARE.
                         'functions\New-PSClassInstance.ps1'
                         'functions\New-PSClassMock.ps1'
                         'functions\ObjectIs-PSClassInstance.ps1'
-                        'functions\ConvertExpectationsToExpressionString.ps1'
                         'functions\FormatCallCount.ps1'
                         )
 

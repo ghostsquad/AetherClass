@@ -39,7 +39,6 @@ $here = Split-Path -Parent $MyInvocation.MyCommand.Path
 . $here\functions\New-PSClassInstance.ps1
 . $here\functions\New-PSClassMock.ps1
 . $here\functions\ObjectIs-PSClassInstance.ps1
-. $here\functions\ConvertExpectationsToExpressionString.ps1
 . $here\functions\FormatCallCount.ps1
 
 Export-ModuleMember -Function ItIs

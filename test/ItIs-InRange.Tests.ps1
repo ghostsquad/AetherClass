@@ -3,28 +3,38 @@ $here = Split-Path -Parent $MyInvocation.MyCommand.Path
 . "$here\..\TestCommon.ps1"
 
 Describe 'ItIs-InRange' {
+    It 'returns GpClass.Mock.Expression' {
+        $actualResult = ItIs-InRange 1 2
+        (ObjectIs-PSClassInstance $actualResult -PSClassName 'GpClass.Mock.Expression') | Should Be $true
+    }
+
+    It 'has accurate representation of provided expression when ToString()' {
+        $actualResult = ItIs-InRange 1 1
+        $actualResult.ToString() | Should Be 'ItIs-InRange{From=1, To=1}'
+    }
+
     It 'can determine if input object is in expected range - inclusive default' {
         $a = 1
-        $actualFunc = ItIs-InRange 1 1
-        $actualFunc.Invoke($a) | Should Be $true
+        $actualResult = ItIs-InRange 1 1
+        $actualResult.Predicate.Invoke($a) | Should Be $true
     }
 
     It 'can determine if unexpected input object is in expected range - inclusive default' {
         $a = 3
-        $actualFunc = ItIs-InRange 1 2
-        $actualFunc.Invoke($a) | Should Be $false
+        $actualResult = ItIs-InRange 1 2
+        $actualResult.Predicate.Invoke($a) | Should Be $false
     }
 
     It 'can determine if input object is in expected range - exclusive' {
         $a = 2
-        $actualFunc = ItIs-InRange 1 3 ([Range]::Exclusive)
-        $actualFunc.Invoke($a) | Should Be $true
+        $actualResult = ItIs-InRange 1 3 ([Range]::Exclusive)
+        $actualResult.Predicate.Invoke($a) | Should Be $true
     }
 
     It 'can determine if unexpected input object is in expected range - exclusive' {
         $a = 1
-        $actualFunc = ItIs-InRange 1 1 ([Range]::Exclusive)
-        $actualFunc.Invoke($a) | Should Be $false
+        $actualResult = ItIs-InRange 1 1 ([Range]::Exclusive)
+        $actualResult.Predicate.Invoke($a) | Should Be $false
     }
 
 }

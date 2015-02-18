@@ -3,28 +3,38 @@ $here = Split-Path -Parent $MyInvocation.MyCommand.Path
 . "$here\..\TestCommon.ps1"
 
 Describe 'ItIs-In' {
+    It 'returns GpClass.Mock.Expression' {
+        $actualResult = ItIs-In @()
+        (ObjectIs-PSClassInstance $actualResult -PSClassName 'GpClass.Mock.Expression') | Should Be $true
+    }
+
+    It 'has accurate representation of provided expression when ToString()' {
+        $actualResult = ItIs-In @(1..2)
+        $actualResult.ToString() | Should Be 'ItIs-In{Items=1 2}'
+    }
+
     It 'can determine if input object is in collection' {
         $a = 1
-        $actualFunc = ItIs-In @(1..2)
-        $actualFunc.Invoke($a) | Should Be $true
+        $actualResult = ItIs-In @(1..2)
+        $actualResult.Predicate.Invoke($a) | Should Be $true
     }
 
     It 'can determine if unexpected input object is in collection' {
         $a = 3
-        $actualFunc = ItIs-In @(1..2)
-        $actualFunc.Invoke($a) | Should Be $false
+        $actualResult = ItIs-In @(1..2)
+        $actualResult.Predicate.Invoke($a) | Should Be $false
     }
 
     It 'can determine if reference object is in collection' {
         $a = new-psobject
-        $actualFunc = ItIs-In @("foo", $a)
-        $actualFunc.Invoke($a) | Should Be $true
+        $actualResult = ItIs-In @("foo", $a)
+        $actualResult.Predicate.Invoke($a) | Should Be $true
     }
 
     It 'can determine if unexpected reference object is in collection' {
         $a = new-psobject
-        $actualFunc = ItIs-In @("foo", "bar")
-        $actualFunc.Invoke($a) | Should Be $false
+        $actualResult = ItIs-In @("foo", "bar")
+        $actualResult.Predicate.Invoke($a) | Should Be $false
     }
 
 }

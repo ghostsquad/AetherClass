@@ -4,10 +4,10 @@ function ObjectIs-PSClassInstance {
         [Parameter(Position=0)]
         [psobject]$InputObject,
 
-        [Parameter(Position=1,ParameterSetName='PSClass')]
+        [Parameter(ParameterSetName='PSClass')]
         [psobject]$PSClass,
 
-        [Parameter(Position=2,ParameterSetName='PSClassName')]
+        [Parameter(ParameterSetName='PSClassName')]
         [string]$PSClassName
     )
 
