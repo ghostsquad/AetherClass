@@ -28,7 +28,7 @@ Describe "New-PSClassMock" {
             $mock._mockedMethods['foo'].Setups.Count | Should Be 0
         }
 
-        #region Setup
+        #region Method Setup
 
         It 'Method Setup - Returns MethodSetupInfo Object' {
             $className = [Guid]::NewGuid().ToString()
@@ -81,7 +81,7 @@ Describe "New-PSClassMock" {
         It 'Method Setup - No Expectations, No Return Value, When Called, Returns Null' {
             $className = [Guid]::NewGuid().ToString()
             $testClass = New-PSClass $className {
-                method 'foo' {}
+                method 'foo' { return 'unexpected' }
             } -PassThru
             $mock = New-PSClassMock $testClass
 
@@ -91,10 +91,21 @@ Describe "New-PSClassMock" {
             $actualValue -eq $null | Should Be $true
         }
 
+        It 'Method Setup - No Setup and Strict, When Called, Expect Exception' {
+            $className = [Guid]::NewGuid().ToString()
+            $testClass = New-PSClass $className {
+                method 'foo' { return 'unexpected' }
+            } -PassThru
+            $mock = New-PSClassMock $testClass -Strict
+
+            $expectedMessage = 'Exception calling "foo" with "1" argument(s): "This Mock is strict and no setups were configured for method foo"'
+            { $mock.Object.foo('anyvalue') } | Should Throw $expectedMessage
+        }
+
         It 'Method Setup - No Expectations, When Called, Returns Provided Return Value' {
             $className = [Guid]::NewGuid().ToString()
             $testClass = New-PSClass $className {
-                method 'foo' {}
+                method 'foo' { return 'unexpected' }
             } -PassThru
             $mock = New-PSClassMock $testClass
 
@@ -108,7 +119,7 @@ Describe "New-PSClassMock" {
         It 'Method Setup - Single Expectation, Called With 1 Arg, Returns Provided Return Value' {
             $className = [Guid]::NewGuid().ToString()
             $testClass = New-PSClass $className {
-                method 'foo' {}
+                method 'foo' { return 'unexpected' }
             } -PassThru
             $mock = New-PSClassMock $testClass
 
@@ -122,7 +133,7 @@ Describe "New-PSClassMock" {
         It 'Method Setup - Fewer Expectations than Args, Returns Provided Return Value' {
             $className = [Guid]::NewGuid().ToString()
             $testClass = New-PSClass $className {
-                method 'foo' {}
+                method 'foo' { return 'unexpected' }
             } -PassThru
             $mock = New-PSClassMock $testClass
             $mock.Setup('foo', @(ItIs-Any([string]))).Returns('expected')
@@ -135,7 +146,7 @@ Describe "New-PSClassMock" {
         It 'Method Setup - More Expectations than Args, Expect Return $null (default)' {
             $className = [Guid]::NewGuid().ToString()
             $testClass = New-PSClass $className {
-                method 'foo' {}
+                method 'foo' { return 'unexpected' }
             } -PassThru
             $mock = New-PSClassMock $testClass
             $mock.Setup('foo', @((ItIs-Any ([string])), (ItIs-Any([string])))).Returns('expected')
@@ -147,7 +158,7 @@ Describe "New-PSClassMock" {
         It 'Method Setup - Multiple Setups - When both Setups can Match, Expect First Setup Matched' {
             $className = [Guid]::NewGuid().ToString()
             $testClass = New-PSClass $className {
-                method 'foo' {}
+                method 'foo' { return 'unexpected' }
             } -PassThru
             $mock = New-PSClassMock $testClass
             $mock.Setup('foo', @(ItIs-Any([string]))).Returns('expected')
@@ -160,7 +171,7 @@ Describe "New-PSClassMock" {
         It 'Method Setup - Multiple Setups - When Second Setup Matches, Expect Second Setup Matched' {
             $className = [Guid]::NewGuid().ToString()
             $testClass = New-PSClass $className {
-                method 'foo' {}
+                method 'foo' { return 'unexpected' }
             } -PassThru
             $mock = New-PSClassMock $testClass
             $mock.Setup('foo', @(ItIs-Any([int]))).Returns('notexpected')
@@ -173,7 +184,7 @@ Describe "New-PSClassMock" {
         It 'Method Setup - Multiple Setups - When neither setup matches, Expect return $null (default)' {
             $className = [Guid]::NewGuid().ToString()
             $testClass = New-PSClass $className {
-                method 'foo' {}
+                method 'foo' { return 'unexpected' }
             } -PassThru
             $mock = New-PSClassMock $testClass
             $mock.Setup('foo', @(ItIs-Any([int]))).Returns('notexpected1')
@@ -186,7 +197,7 @@ Describe "New-PSClassMock" {
         It 'Method Setup - Expected Throw - Can Set Method to Throw an Exception' {
             $className = [Guid]::NewGuid().ToString()
             $testClass = New-PSClass $className {
-                method 'foo' {}
+                method 'foo' { return 'unexpected' }
             } -PassThru
             $mock = New-PSClassMock $testClass
 
@@ -204,14 +215,14 @@ Describe "New-PSClassMock" {
             [object]::Equals($actualException.GetBaseException(), $expectedException) | Should Be $true
         }
 
-        #endregion Setup
+        #endregion Method Setup
 
-        #region Verify
+        #region Method Verify
 
         It 'Method Verify - Setup Not Required To Verify Call was Made' {
             $className = [Guid]::NewGuid().ToString()
             $testClass = New-PSClass $className {
-                method 'foo' {}
+                method 'foo' { return 'unexpected' }
             } -PassThru
             $mock = New-PSClassMock $testClass
 
@@ -223,7 +234,7 @@ Describe "New-PSClassMock" {
         It 'Method Verify - Setup Differs From Call, Verification Still Successful' {
             $className = [Guid]::NewGuid().ToString()
             $testClass = New-PSClass $className {
-                method 'foo' {}
+                method 'foo' { return 'unexpected' }
             } -PassThru
             $mock = New-PSClassMock $testClass
 
@@ -237,7 +248,7 @@ Describe "New-PSClassMock" {
         It 'Method Verify - No Expectations - Called with One Arg, Expect No Exception' {
             $className = [Guid]::NewGuid().ToString()
             $testClass = New-PSClass $className {
-                method 'foo' {}
+                method 'foo' { return 'unexpected' }
             } -PassThru
             $mock = New-PSClassMock $testClass
 
@@ -251,7 +262,7 @@ Describe "New-PSClassMock" {
         It 'Method Verify - 1 Expectation - Called with No Args, Expect Exception' {
             $className = [Guid]::NewGuid().ToString()
             $testClass = New-PSClass $className {
-                method 'foo' {}
+                method 'foo' { return 'unexpected' }
             } -PassThru
             $mock = New-PSClassMock $testClass
 
@@ -274,7 +285,7 @@ Describe "New-PSClassMock" {
         It 'Method Verify - Expectation does not match args, Expect Exception' {
             $className = [Guid]::NewGuid().ToString()
             $testClass = New-PSClass $className {
-                method 'foo' {}
+                method 'foo' { return 'unexpected' }
             } -PassThru
             $mock = New-PSClassMock $testClass
 
@@ -297,7 +308,7 @@ Describe "New-PSClassMock" {
         It 'Method Verify - Many Expectations - Called with Many Args, Expect No Exception' {
             $className = [Guid]::NewGuid().ToString()
             $testClass = New-PSClass $className {
-                method 'foo' {}
+                method 'foo' { return 'unexpected' }
             } -PassThru
             $mock = New-PSClassMock $testClass
 
@@ -308,7 +319,208 @@ Describe "New-PSClassMock" {
             { $mock.Verify('foo', @($expectation1, $expectation2)) } | Should Not Throw
         }
 
-        #endregion Verify
+        #endregion Method Verify
+
+        #region Property Setup
+        It 'Property Setup - Can Setup Property Get' {
+            $className = [Guid]::NewGuid().ToString()
+            $testClass = New-PSClass $className {
+                property 'foo' { return 'unexpected' }
+            } -PassThru
+            $mock = New-PSClassMock $testClass
+
+            $mock.SetupProperty('foo', 'expected')
+
+            $mock.Object.Foo | Should Be 'expected'
+        }
+
+        It 'Property Setup - Can Setup Note Get' {
+            $className = [Guid]::NewGuid().ToString()
+            $testClass = New-PSClass $className {
+                note 'foo'
+            } -PassThru
+            $mock = New-PSClassMock $testClass
+
+            $mock.SetupProperty('foo', 'expected')
+
+            $mock.Object.Foo | Should Be 'expected'
+        }
+
+        It 'Property Setup - Can Setup Return Value using Fluent API' {
+            $className = [Guid]::NewGuid().ToString()
+            $testClass = New-PSClass $className {
+                property 'foo' { return 'unexpected' }
+            } -PassThru
+            $mock = New-PSClassMock $testClass
+
+            $mock.SetupProperty('foo').Returns('expected')
+
+            $mock.Object.Foo | Should Be 'expected'
+        }
+
+        It 'Property Setup - Without Setup, Property returns $null (default)' {
+            $className = [Guid]::NewGuid().ToString()
+            $testClass = New-PSClass $className {
+                property 'foo' { return 'unexpected' }
+            } -PassThru
+            $mock = New-PSClassMock $testClass
+
+            $mock.Object.Foo -eq $null | Should Be $true
+        }
+
+        It 'Property Setup - Without Setup, and Strict, When Set, Expect Exception' {
+            $className = [Guid]::NewGuid().ToString()
+            $testClass = New-PSClass $className {
+                property 'foo' { return 'unexpected' }
+            } -PassThru
+            $mock = New-PSClassMock $testClass -Strict
+
+            $expectedMessage = 'Exception setting "foo": "This Mock is strict and no setups were configured for setter of property foo"'
+            { $mock.Object.Foo = 'bar' } | Should Throw $expectedMessage
+        }
+
+        #endregion Property Setup
+
+        #region Property Get Verify
+
+        It 'Property Get Verify - No Setup, When Called, When Verify, Expect No Exception' {
+            $className = [Guid]::NewGuid().ToString()
+            $testClass = New-PSClass $className {
+                property 'foo' { return 'unexpected' }
+            } -PassThru
+            $mock = New-PSClassMock $testClass
+
+            # act
+            $actual = $mock.Object.Foo
+
+            # assert
+            { $mock.VerifyGet('Foo') } | Should Not Throw
+        }
+
+        It 'Property Get Verify - When Setup, When Called When Verify, Expect No Exception' {
+            $className = [Guid]::NewGuid().ToString()
+            $testClass = New-PSClass $className {
+                property 'foo' { return 'unexpected' }
+            } -PassThru
+            $mock = New-PSClassMock $testClass
+
+            # act
+            $mock.SetupProperty('foo').Returns('bar')
+            $actual = $mock.Object.Foo
+
+            # assert
+            { $mock.VerifyGet('Foo') } | Should Not Throw
+        }
+
+        It 'Property Get Verify - When Get Not Called, When Verify, Expect Exception' {
+            $className = [Guid]::NewGuid().ToString()
+            $testClass = New-PSClass $className {
+                property 'foo' { return 'unexpected' }
+            } -PassThru
+            $mock = New-PSClassMock $testClass
+
+            $expectedMessage = 'Exception calling "VerifyGet" with "1" argument(s): "' `
+                + [Environment]::NewLine `
+                + 'Expected invocation on the mock at least once, but was never performed: Foo' `
+                + [Environment]::NewLine `
+                + 'No setups configured.' `
+                + [Environment]::NewLine `
+                + 'No invocations performed."'
+
+            { $mock.VerifyGet('Foo') } | Should Throw $expectedMessage
+        }
+
+        #endregion Property Get Verify
+
+        #region Property Set Verify
+
+        It 'Property Set Verify - When Called, When Verify, Expect No Exception' {
+            $className = [Guid]::NewGuid().ToString()
+            $testClass = New-PSClass $className {
+                property 'foo' { return 'unexpected' }
+            } -PassThru
+            $mock = New-PSClassMock $testClass
+
+            # act
+            $mock.Object.Foo = 'bar'
+
+            # assert
+            { $mock.VerifySet('Foo', (ItIs-Any ([object]))) } | Should Not Throw
+        }
+
+        It 'Property Set Verify - When Called, When Verify with MisMatched Expectation, Expect Exception' {
+            $className = [Guid]::NewGuid().ToString()
+            $testClass = New-PSClass $className {
+                property 'foo' { return 'unexpected' }
+            } -PassThru
+            $mock = New-PSClassMock $testClass
+
+            # act
+            $mock.Object.Foo = 'bar'
+
+            $expectedMessage = 'Exception calling "VerifySet" with "2" argument(s): "' `
+                + [Environment]::NewLine `
+                + 'Expected invocation on the mock at least once, but was never performed: Foo = ItIs-Any{Type=int}' `
+                + [Environment]::NewLine `
+                + 'No setups configured.' `
+                + [Environment]::NewLine `
+                + [Environment]::NewLine `
+                + 'Performed invocations:' `
+                + [Environment]::NewLine `
+                + $className + '.foo = bar"'
+
+            { $mock.VerifySet('Foo', (ItIs-Any ([int]))) } | Should Throw $expectedMessage
+        }
+
+        It 'Property Set Verify - When Called Multiple Times, When Second Set Matches Verify, Expect No Exception' {
+            $className = [Guid]::NewGuid().ToString()
+            $testClass = New-PSClass $className {
+                property 'foo' { return 'unexpected' }
+            } -PassThru
+            $mock = New-PSClassMock $testClass
+
+            # act
+            $mock.Object.Foo = 'bar'
+            $mock.Object.Foo = 1
+
+            # assert
+            { $mock.VerifySet('Foo', (ItIs-Any ([int]))) } | Should Not Throw
+        }
+
+        It 'Property Set Verify - When Setup, When Verify, Expect No Exception' {
+            $className = [Guid]::NewGuid().ToString()
+            $testClass = New-PSClass $className {
+                property 'foo' { return 'unexpected' }
+            } -PassThru
+            $mock = New-PSClassMock $testClass
+
+            # act
+            $mock.SetupProperty('foo').Returns('bar')
+            $mock.Object.Foo = 'newbar'
+
+            # assert
+            { $mock.VerifySet('foo', (ItIs-Any ([object]))) } | Should Not Throw
+        }
+
+        It 'Property Set Verify - When Set Not Called, When Verify, Expect Exception' {
+            $className = [Guid]::NewGuid().ToString()
+            $testClass = New-PSClass $className {
+                property 'foo' { return 'unexpected' }
+            } -PassThru
+            $mock = New-PSClassMock $testClass
+
+            $expectedMessage = 'Exception calling "VerifySet" with "2" argument(s): "' `
+                + [Environment]::NewLine `
+                + 'Expected invocation on the mock at least once, but was never performed: Foo = ItIs-Any{Type=System.Object}' `
+                + [Environment]::NewLine `
+                + 'No setups configured.' `
+                + [Environment]::NewLine `
+                + 'No invocations performed."'
+
+            { $mock.VerifySet('Foo', (ItIs-Any ([object]))) } | Should Throw $expectedMessage
+        }
+
+        #endregion Property Set Verify
     }
 
     Context 'Rainy' {
@@ -317,9 +529,9 @@ Describe "New-PSClassMock" {
             $testClass = New-PSClass $className {} -PassThru
             $mock = New-PSClassMock $testClass
 
-            $expectedMessage = 'Exception calling "Setup" with "1" argument(s): "Member with name: foo cannot be found to mock!"'
+            $expectedMessage = 'Exception calling "SetupProperty" with "1" argument(s): "Member with name: foo cannot be found to mock!"'
 
-            { $mock.Setup('foo') } | Should Throw $expectedMessage
+            { $mock.SetupProperty('foo') } | Should Throw $expectedMessage
         }
     }
 }

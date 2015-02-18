@@ -46,8 +46,8 @@ if(-not (Get-PSClass 'GpClass.Mock')) {
 
                     if($methodSetupInfo -eq $null) {
                         if($Strict) {
-                            $msg = "This Mock is strict and no expectations were set for method {0}" -f $methodName
-                            throw (new-object PSMockException($msg))
+                            $msg = "This Mock is strict and no setups were configured for method {0}" -f $methodName
+                            throw (new-object PSMockException([ExceptionReason]::MockConsistencyCheckFailed, $msg))
                         }
 
                         return
@@ -102,16 +102,10 @@ if(-not (Get-PSClass 'GpClass.Mock')) {
 
                     [void]$mockDefinition._mockedProperties[$propertyName].Calls.Add($callContext)
 
-                    $propertySetupInfoCollection = $mockDefinition._mockedProperties[$propertyName].Setups
-                    $condition = {ObjectIs-PSClassInstance $_ 'GpClass.Mock.PropertySetupInfo'}
-                    if(Where-Any -InputObject $propertySetupInfoCollection -Condition $condition) {
-                        [Void]$propertySetupInfo.Invocations.Add($callContext)
-                        return $propertySetupInfo.ReturnValue
-                    }
+                    $setups = $mockDefinition._mockedProperties[$propertyName].Setups
 
-                    if($Strict) {
-                        $msg = "This Mock is strict and no expectation was set for property $propertyName"
-                        throw (new-object PSMockException($msg))
+                    if($setups.Count -gt 0) {
+                        return $setups[0].ReturnValue
                     }
                 }.GetNewClosure()
 
@@ -128,20 +122,20 @@ if(-not (Get-PSClass 'GpClass.Mock')) {
 
                     [void]$mockDefinition._mockedProperties[$propertyName].Calls.Add($callContext)
 
-                    $propertySetupInfoCollection = $mockDefinition._mockedProperties[$propertyName].Setups
-                    $condition = {ObjectIs-PSClassInstance $_ 'GpClass.Mock.PropertySetupInfo'}
-                    if(Where-Any -InputObject $propertySetupInfoCollection -Condition $condition) {
-                        [Void]$propertySetupInfo.Invocations.Add($callContext)
-                        return $propertySetupInfo.ReturnValue
-                    }
-
-                    if($Strict) {
-                        $msg = "This Mock is strict and no expectation was set for property $propertyName"
-                        throw (new-object PSMockException($msg))
+                    if($Strict -and $mockDefinition._mockedProperties[$propertyName].Setups.Count -eq 0) {
+                        $msg = "This Mock is strict and no setups were configured for setter of property $propertyName"
+                        throw (new-object PSMockException([ExceptionReason]::MockConsistencyCheckFailed, $msg))
                     }
                 }.GetNewClosure()
 
-                Attach-PSProperty $theMockObject $propertyName $mockedPropertyGetScript $mockedPropertySetScript
+                $attachSplat = @{
+                    InputObject = $theMockObject
+                    Name = $propertyName
+                    Get = $mockedPropertyGetScript
+                    Set = $mockedPropertySetScript
+                }
+
+                Attach-PSProperty @attachSplat
             }
 
             $this.Object = $theMockObject
@@ -179,7 +173,8 @@ if(-not (Get-PSClass 'GpClass.Mock')) {
                 $member = $this._GetMemberFromOriginal($MethodName)
 
                 if($member -isnot [System.Management.Automation.PSScriptMethod]) {
-                    throw (new-object PSMockException(("Member {0} is not a PSScriptMethod." -f $MethodName)))
+                    $msg = "Member {0} is not a PSScriptMethod." -f $MethodName
+                    throw (new-object PSMockException([ExceptionReason]::MockConsistencyCheckFailed, $msg))
                 }
 
                 $setupInfo = New-PSClassInstance 'GpClass.Mock.MethodSetupInfo' -ArgumentList @(
@@ -191,24 +186,6 @@ if(-not (Get-PSClass 'GpClass.Mock')) {
                 [Void]$this._mockedMethods[$MethodName].Setups.Add($setupInfo)
 
                 return $setupInfo
-            } catch {
-                throw $_.Exception.GetBaseException()
-            }
-        }
-
-        method 'SetupMethod' {
-            param (
-                [string]$MethodName,
-                [System.Collections.IEnumerable]$Expressions = @()
-            )
-
-            # Rethrow resetting the call-stack so that
-            # callers see the exception as happening at
-            # this call site.
-            # TODO: see how to mangle the stacktrace so
-            # that the mock doesn't even show up there.
-            try {
-                return $this.Setup($MethodName, $Expressions)
             } catch {
                 throw $_.Exception.GetBaseException()
             }
@@ -226,7 +203,6 @@ if(-not (Get-PSClass 'GpClass.Mock')) {
             # TODO: see how to mangle the stacktrace so
             # that the mock doesn't even show up there.
             try {
-
                 Guard-ArgumentNotNull 'PropertyName' $PropertyName
                 $member = $this._GetMemberFromOriginal($PropertyName)
 
@@ -234,7 +210,7 @@ if(-not (Get-PSClass 'GpClass.Mock')) {
                     -and $member -isnot [System.Management.Automation.PSScriptProperty]) {
 
                     $msg = "Member {0} is not a PSScriptProperty or PSNoteProperty." -f $PropertyName
-                    throw (new-object PSMockException($msg))
+                    throw (new-object PSMockException([ExceptionReason]::MockConsistencyCheckFailed, $msg))
                 }
 
                 $setupInfo = New-PSClassInstance 'GpClass.Mock.PropertySetupInfo' -ArgumentList @(
@@ -243,7 +219,7 @@ if(-not (Get-PSClass 'GpClass.Mock')) {
                     $DefaultValue
                 )
 
-                [Void]$this._mockedProperties[$PropertyName].Add($setupInfo)
+                [Void]$this._mockedProperties[$PropertyName].Setups.Add($setupInfo)
 
                 return $setupInfo
             } catch {
@@ -292,6 +268,7 @@ if(-not (Get-PSClass 'GpClass.Mock')) {
                 # that the mock doesn't even show up there.
                 try {
                     $this._ThrowVerifyException($MethodName,
+                        [InvocationType]::MethodCall,
                         $FailMessage,
                         $Expressions,
                         $this._mockedMethods[$MethodName].Setups,
@@ -307,34 +284,86 @@ if(-not (Get-PSClass 'GpClass.Mock')) {
         method 'VerifyGet' {
             #[System.Diagnostics.DebuggerStepThrough()]
             param (
-                [string]$MemberName,
-                [Times]$Times = [Times]::AtLeastOnce()
+                [string]$PropertyName,
+                [Times]$Times = [Times]::AtLeastOnce(),
+                [string]$FailMessage
             )
 
-            Guard-ArgumentNotNull 'MemberName' $MemberName
+            Guard-ArgumentNotNull 'PropertyName' $PropertyName
             Guard-ArgumentNotNull 'Times' $Times
 
-            #TODO
+            $callCount = $this._mockedProperties[$PropertyName].Calls.Count
+
+            if(-not $Times.Verify($callCount)) {
+                # Rethrow resetting the call-stack so that
+                # callers see the exception as happening at
+                # this call site.
+                # TODO: see how to mangle the stacktrace so
+                # that the mock doesn't even show up there.
+                try {
+                    $this._ThrowVerifyException($PropertyName,
+                        [InvocationType]::PropertyGet,
+                        $FailMessage,
+                        @(),
+                        $this._mockedProperties[$PropertyName].Setups,
+                        $this._mockedProperties[$PropertyName].Calls,
+                        $Times,
+                        $callCount)
+                } catch {
+                    throw $_.Exception.GetBaseException()
+                }
+            }
         }
 
         method 'VerifySet' {
             #[System.Diagnostics.DebuggerStepThrough()]
             param (
-                [string]$MemberName,
-                [func[object, bool]]$Expectation,
-                [Times]$Times = [Times]::AtLeastOnce()
+                [string]$PropertyName,
+                [psobject]$Expression,
+                [Times]$Times = [Times]::AtLeastOnce(),
+                [string]$FailMessage
             )
 
-            Guard-ArgumentNotNull 'MemberName' $MemberName
-            Guard-ArgumentNotNull 'Expectation' $Expectation
+            Guard-ArgumentNotNull 'PropertyName' $PropertyName
+            if($Expression -ne $null) {
+                Guard-ArgumentIsPSClassInstance 'Expression' $Expression 'GpClass.Mock.Expression'
+            }
             Guard-ArgumentNotNull 'Times' $Times
 
-            #TODO
+            $Expectations = @($Expression.Predicate)
+
+            $callCount = 0
+            foreach($call in $this._mockedProperties[$PropertyName].Calls) {
+                if($this._ArgumentsMeetExpectations($call.Arguments, $Expectations)) {
+                    $callCount++
+                }
+            }
+
+            if(-not $Times.Verify($callCount)) {
+                # Rethrow resetting the call-stack so that
+                # callers see the exception as happening at
+                # this call site.
+                # TODO: see how to mangle the stacktrace so
+                # that the mock doesn't even show up there.
+                try {
+                    $this._ThrowVerifyException($PropertyName,
+                        [InvocationType]::PropertySet,
+                        $FailMessage,
+                        @($Expression),
+                        $this._mockedProperties[$PropertyName].Setups,
+                        $this._mockedProperties[$PropertyName].Calls,
+                        $Times,
+                        $callCount)
+                } catch {
+                    throw $_.Exception.GetBaseException()
+                }
+            }
         }
 
         method '_ThrowVerifyException' {
             param (
                 [string]$MemberName,
+                [InvocationType]$InvocationType,
                 [string]$FailMessage,
                 [System.Collections.IEnumerable]$Expressions = @(),
                 [System.Collections.IEnumerable]$Setups,
@@ -343,9 +372,16 @@ if(-not (Get-PSClass 'GpClass.Mock')) {
                 [int]$CallCount
             )
 
-            $Expression = $MemberName + "(" + ([string]::Join(', ', $Expressions))+ ")"
+            $formatSplat = @{
+                InvocationType = $InvocationType
+                ClassName = [string]::Empty
+                MemberName = $MemberName
+                ArgumentsList = @($Expressions | %{$_.ToString()})
+            }
 
-            [string]$msg = $Times.GetExceptionMessage($FailMessage, $Expression, $CallCount) + `
+            $callExpression = (FormatInvocation @formatSplat)
+
+            [string]$msg = $Times.GetExceptionMessage($FailMessage, $callExpression, $CallCount) + `
                 [environment]::NewLine + $this._FormatSetupsInfo($Setups) + `
                 [environment]::NewLine + $this._FormatInvocations($ActualCalls)
 
@@ -489,13 +525,14 @@ if(-not (Get-PSClass 'GpClass.Mock.SetupInfo')) {
         }
 
         method 'Format' {
-            if ($this.InvocationType -eq [InvocationType]::PropertySet) {
-                return ($this.Mock._originalClass.__ClassName + "." + `
-                    $this.Name + " = " + [string]::Join(', ', @($this.Expressions | %{$_.ToString()})))
+            $formatSplat = @{
+                InvocationType = $this.InvocationType
+                ClassName = $this.Mock._originalClass.__ClassName
+                MemberName = $this.Name
+                ArgumentsList = @($this.Expressions | %{$_.ToString()})
             }
 
-            return ($this.Mock._originalClass.__ClassName + "." + $this.Name + "(" + `
-                [string]::Join(', ', @($this.Expressions | %{$_.ToString()})) + ")")
+            return (FormatInvocation @formatSplat)
         }
 
         method 'CallBack' {
@@ -589,17 +626,14 @@ if(-not (Get-PSClass 'GpClass.Mock.CallContext')) {
         }
 
         method 'Format' {
-            if ($this.InvocationType -eq [InvocationType]::PropertyGet) {
-                return $this.Mock._originalClass.__ClassName + "." + $this.MemberName;
+            $formatSplat = @{
+                InvocationType = $this.InvocationType
+                ClassName = $this.Mock._originalClass.__ClassName
+                MemberName = $this.MemberName
+                ArgumentsList = $this.Arguments
             }
 
-            if ($this.InvocationType -eq [InvocationType]::PropertySet) {
-                return ($this.Mock._originalClass.__ClassName + "." `
-                    + $this.MemberName + " = " + $this.Arguments[0])
-            }
-
-            return ($this.Mock._originalClass.__ClassName + "." + $this.MemberName `
-                + "(" + [string]::Join(", ", $this.Arguments) + ")")
+            return (FormatInvocation @formatSplat)
         }
     }
 }

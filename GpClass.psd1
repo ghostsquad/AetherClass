@@ -105,6 +105,7 @@ SOFTWARE.
                         'functions\New-PSClassMock.ps1'
                         'functions\ObjectIs-PSClassInstance.ps1'
                         'functions\FormatCallCount.ps1'
+                        'functions\FormatInvocation.ps1'
                         )
 
           PrivateData = @{
