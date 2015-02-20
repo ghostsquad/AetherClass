@@ -207,8 +207,9 @@ New-PSClass 'IEnumerator' {
 
 Describe 'Scripts.UpdateFilesCommand' {
     It 'Adds a Line Count to end of file' {
+        $i = 0;
         $mockEnumerator = New-PSClassMock 'IEnumerator'
-        $mockEnumerator.Setup('MoveNext').Returns($true)
+        $mockEnumerator.Setup('MoveNext').Returns({ $script:i++ -eq 0 }.GetNewClosure())
 
         $mockEnvironment = New-PSClassMock 'WindowsEnvironment'
         $mockEnvironment.Setup('EnumerateFiles').Returns($mockEnumerator.Object)

@@ -215,6 +215,20 @@ Describe "New-PSClassMock" {
             [object]::Equals($actualException.GetBaseException(), $expectedException) | Should Be $true
         }
 
+        It 'Method Setup - Returns - Given ScriptBlock, evaluates scriptblock lazily' {
+            $className = [Guid]::NewGuid().ToString()
+            $testClass = New-PSClass $className {
+                method 'foo' { return 'unexpected' }
+            } -PassThru
+            $mock = New-PSClassMock $testClass
+
+            $i = 0
+            $setupInfo = $mock.Setup('foo').Returns({ return $script:i += 1; }.GetNewClosure())
+
+            $mock.Object.foo() | Should Be 1
+            $mock.Object.foo() | Should Be 2
+        }
+
         #endregion Method Setup
 
         #region Method Verify

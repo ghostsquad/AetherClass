@@ -495,7 +495,18 @@ if(-not (Get-PSClass 'GpClass.Mock.SetupInfo')) {
         note 'Invocations'
         note 'InvocationType'
         note 'CallbackAction'
-        note 'ReturnValue'
+        note '_defaultReturnValue'
+        note '_returnValueScript'
+        property 'ReturnValue' -get {
+            if($this._returnValueScript -ne $null) {
+                return $this._returnValueScript.Invoke()
+            } else {
+                return $this._defaultReturnValue
+            }
+        } -set {
+            param($value)
+            $this._defaultReturnValue = $value
+        }
         note 'CallCount'
 
         property 'Expectations' {
@@ -551,7 +562,12 @@ if(-not (Get-PSClass 'GpClass.Mock.SetupInfo')) {
                 [Object]$Value
             )
 
-            $this.ReturnValue = $Value
+            if($Value -is [scriptblock]) {
+                $this._returnValueScript = $Value
+            } else {
+                $this._defaultReturnValue = $Value
+            }
+
             return $this
         }
     }
