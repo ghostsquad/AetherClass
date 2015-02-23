@@ -510,13 +510,16 @@ if(-not (Get-PSClass 'GpClass.Mock.SetupInfo')) {
         note 'CallCount'
 
         property 'Expectations' {
-            $expectations = @($this.Expressions | %{[func[object,bool]]$_.Predicate})
+            $expectations = New-Object System.Collections.ArrayList
+            foreach($expression in $this.Expressions) {
+                [Void]$expectations.Add($expression.Predicate)
+            }
 
-            if($expectations.Count -gt 1) {
-                return $expectations
-            } else {
+            if($expectations.Count -le 1) {
                 return ,$expectations
             }
+
+            return $expectations
         }
 
         constructor {

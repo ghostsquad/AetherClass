@@ -549,29 +549,3 @@ Describe "New-PSClassMock" {
         }
     }
 }
-
-Describe 'GpClass.Mock.MethodSetupInfo' {
-    Context 'Sunny' {
-        It 'Sets Name Note from constructor' {
-            $instance = New-PSClassInstance 'GpClass.Mock.MethodSetupInfo' -ArgumentList @(
-                'foo'
-            )
-
-            $instance.Name | Should Be 'foo'
-        }
-
-        It 'Sets adds expectations from constructor' {
-            $instance = New-PSClassInstance 'GpClass.Mock.MethodSetupInfo' -ArgumentList @(
-                'foo',
-                @({return $true})
-            )
-
-            $instance.Expectations.Count | Should Be 1
-            $instance.Expectations[0].Invoke('anyvalue') | Should Be $true
-        }
-    }
-
-    Context 'Rainy' {
-
-    }
-}
