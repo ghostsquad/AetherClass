@@ -393,6 +393,32 @@ Describe "New-PSClassMock" {
             { $mock.Object.Foo = 'bar' } | Should Throw $expectedMessage
         }
 
+        It 'Property Setup - When setup multiple times, expect last setup to apply' {
+            $className = [Guid]::NewGuid().ToString()
+            $testClass = New-PSClass $className {
+                property 'foo' { return 'unexpected' }
+            } -PassThru
+
+            $mock = New-PSClassMock $testClass
+            $mock.SetupProperty('foo').Returns('default_setup')
+            $mock.SetupProperty('foo').Returns('expectedvalue')
+
+            $mock.Object.foo | Should Be 'expectedvalue'
+        }
+
+        It 'Property Setup - When setup after default value is established, expect last setup to apply' {
+            $className = [Guid]::NewGuid().ToString()
+            $testClass = New-PSClass $className {
+                property 'foo' { return 'unexpected' }
+            } -PassThru
+
+            $mock = New-PSClassMock $testClass
+            $mock.SetupProperty('foo', 'default_setup')
+            $mock.SetupProperty('foo').Returns('expectedvalue')
+
+            $mock.Object.foo | Should Be 'expectedvalue'
+        }
+
         #endregion Property Setup
 
         #region Property Get Verify

@@ -219,7 +219,13 @@ if(-not (Get-PSClass 'GpClass.Mock')) {
                     $DefaultValue
                 )
 
-                [Void]$this._mockedProperties[$PropertyName].Setups.Add($setupInfo)
+                $setups = $this._mockedProperties[$PropertyName].Setups
+
+                if($setups.Count -gt 0) {
+                    $setups[0] = $setupInfo
+                } else {
+                    [Void]$setups.Add($setupInfo)
+                }
 
                 return $setupInfo
             } catch {
