@@ -648,4 +648,24 @@ Describe "New-PSClassMock" {
     }
 
     #endregion Property Set Verify
+
+    #region Callbacks
+
+    It 'Callbacks - Can set variable from test using callback' {
+        $className = [Guid]::NewGuid().ToString()
+        $testClass = New-PSClass $className {
+            method 'foo' { return 'unexpected' }
+        } -PassThru
+        $mock = New-PSClassMock $testClass
+
+        [ref]$actualArg = $null
+
+        $mock.Setup('foo').CallBack({ $actualArg.Value = $args[0] }.GetNewClosure())
+
+        $mock.Object.foo('expectVal1')
+
+        $actualArg.Value | Should Be 'expectVal1'
+    }
+
+    #endregion Callbacks
 }
