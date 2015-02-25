@@ -259,11 +259,11 @@ if(-not (Get-PSClass 'GpClass.Mock')) {
                     }
                 }
 
-                ifdebug {
-                    'callCount: ' + $callCount
-                    'times: ' + $Times.ToString()
-                    'timesverify: ' + $Times.Verify($callCount)
-                }
+                #ifdebug {
+                #    'callCount: ' + $callCount
+                #    'times: ' + $Times.ToString()
+                #    'timesverify: ' + $Times.Verify($callCount)
+                #}
 
                 if(-not $Times.Verify($callCount)) {
                     $this._ThrowVerifyException($MethodName,
