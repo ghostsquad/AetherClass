@@ -37,7 +37,7 @@ if(-not (Get-PSClass 'GpClass.Mock')) {
                     $callContext = New-PSClassInstance 'GpClass.Mock.CallContext' -ArgumentList @(
                         $mockDefinition,
                         $methodName,
-                        [InvocationType]::MethodCall,
+                        ([InvocationType]::MethodCall),
                         $args
                     )
 
@@ -591,7 +591,7 @@ if(-not (Get-PSClass 'GpClass.Mock.PropertySetupInfo')) {
                 $DefaultValue
             )
 
-            Base $Mock $Name [InvocationType]::PropertySet
+            Base $Mock $Name ([InvocationType]::PropertySet)
 
             [Void]$this.Expressions.Add((ItIs-Any ([object])))
             $this.ReturnValue = $DefaultValue
@@ -610,7 +610,7 @@ if(-not (Get-PSClass 'GpClass.Mock.MethodSetupInfo')) {
                 [System.Collections.IEnumerable]$Expressions = @()
             )
 
-            Base $Mock $Name [InvocationType]::MethodCall
+            Base $Mock $Name ([InvocationType]::MethodCall)
 
             $this.Expressions = $Expressions
             $this.ExceptionToThrow = $null

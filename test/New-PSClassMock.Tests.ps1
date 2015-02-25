@@ -274,6 +274,34 @@ Describe "New-PSClassMock" {
         { $mock.Verify('foo') } | Should Not Throw
     }
 
+    It 'Method Verify - Issue21' {
+        $className = [Guid]::NewGuid().ToString()
+        $testClass = New-PSClass $className {
+            method 'foo' { return 'unexpected' }
+        } -PassThru
+        $mock = New-PSClassMock $testClass
+
+        $mock.Setup('foo').Returns(@())
+        $mock.Object.foo(1)
+
+        $expectedMessage = 'Exception calling "Verify" with "3" argument(s): "' `
+            + [Environment]::NewLine `
+            + 'Expected invocation on the mock once, but was 0 times: foo(ItIs-Any{Type=string})' `
+            + [Environment]::NewLine `
+            + [Environment]::NewLine `
+            + 'Configured setups:' `
+            + [Environment]::NewLine `
+            + $className + ".foo()" `
+            + [Environment]::NewLine `
+            + [Environment]::NewLine `
+            + 'Performed invocations:' `
+            + [Environment]::NewLine `
+            + $className + '.foo(1)"'
+
+        $expectation = ItIs-Any ([string])
+        { $mock.Verify('foo', @($expectation), [Times]::Once()) } | Should Throw $expectedMessage
+    }
+
     It 'Method Verify - Setup Differs From Call, Verification Still Successful' {
         $className = [Guid]::NewGuid().ToString()
         $testClass = New-PSClass $className {
