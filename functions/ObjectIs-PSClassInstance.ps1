@@ -54,17 +54,34 @@ function ObjectIs-PSClassInstance {
             return $false
         }
 
+        $isMock = $InputObject.psobject.properties['____Mock____'] -ne $null
+        if($isMock) { Write-Debug 'InputObject is a PSClassMock instance' }
+
         foreach($classMember in $PSClass.__Members.Values) {
             $memberName = $classMember.Name
             $objectMember = $InputObject.psobject.members[$memberName]
+
+            $classMemberType = $classMember.GetType()
+            $objectMemberType = $objectMember.GetType()
+
+            if($isMock -and $classMemberType -eq [System.Management.Automation.PSPropertyInfo] `
+                -and -not $objectMemberType -eq [System.Management.Automation.PSPropertyInfo]) {
+
+                Write-Debug ('InputObject is a PSClassMock, and the class expects a derivative of PSPropertyInfo for member ''{0}''. Mock member type is {1}' -f `
+                        $memberName, `
+                        $objectMemberType)
+
+                return $false
+            }
+
             # compare member types
             # we could go further and compare parameters for method scripts and property getter/setter, but that seems like overkill
             # considering that the PSClass TypeName assertion prior to this
-            if ($objectMember -ne $null -and $objectMember.GetType() -ne $classMember.GetType()) {
+            if (-not $isMock -and $objectMember -ne $null -and $objectMemberType -ne $classMemberType) {
                 Write-Debug ('Member type mismatch. Class has member {0} which is {1}, where as the object has a member with the same name which is {2}' -f `
                         $memberName, `
-                        $psMemberInfo.GetType(), `
-                        $objectMember.GetType())
+                        $classMemberType, `
+                        $objectMemberType)
 
                 return $false
             }

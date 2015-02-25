@@ -53,6 +53,16 @@ Describe "New-PSClassMock" {
         ObjectIs-PSClassInstance $mock.Object $parentClassName | Should Be $true
     }
 
+    It 'Mock Creation - Given class with notes, Can Fool ObjectIs-PSClassInstance (mocks have properties)' {
+        $className = [Guid]::NewGuid().ToString()
+        $testClass = New-PSClass $className {
+            note 'foo'
+        } -PassThru
+        $mock = New-PSClassMock $testClass
+
+        ObjectIs-PSClassInstance $mock.Object $className | Should Be $true
+    }
+
     #region Method Setup
 
     It 'Method Setup - Returns MethodSetupInfo Object' {
