@@ -28,6 +28,16 @@ Describe "New-PSClassMock" {
             $mock._mockedMethods['foo'].Setups.Count | Should Be 0
         }
 
+        It 'Mock Creation - Can Fool ObjectIs-PSClassInstance' {
+            $className = [Guid]::NewGuid().ToString()
+            $testClass = New-PSClass $className {
+                method 'foo' {}
+            } -PassThru
+            $mock = New-PSClassMock $testClass
+
+            ObjectIs-PSClassInstance $mock.Object $className | Should Be $true
+        }
+
         #region Method Setup
 
         It 'Method Setup - Returns MethodSetupInfo Object' {

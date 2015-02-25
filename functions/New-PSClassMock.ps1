@@ -23,6 +23,7 @@ if(-not (Get-PSClass 'GpClass.Mock')) {
 
             $theMockObject = New-PSObject
             Attach-PSNote $theMockObject '____mock____' $this
+            $theMockObject.psobject.TypeNames.Insert(0, $Class.__ClassName);
 
             $mockDefinition = $this
 
