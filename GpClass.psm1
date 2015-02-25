@@ -41,6 +41,7 @@ $here = Split-Path -Parent $MyInvocation.MyCommand.Path
 . $here\functions\ObjectIs-PSClassInstance.ps1
 . $here\functions\FormatCallCount.ps1
 . $here\functions\FormatInvocation.ps1
+. $here\functions\AssertMemberType.ps1
 
 Export-ModuleMember -Function ItIs
 Export-ModuleMember -Function *-*

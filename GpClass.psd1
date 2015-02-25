@@ -106,6 +106,7 @@ SOFTWARE.
                         'functions\ObjectIs-PSClassInstance.ps1'
                         'functions\FormatCallCount.ps1'
                         'functions\FormatInvocation.ps1'
+                        'functions\AssertMemberType.ps1'
                         )
 
           PrivateData = @{

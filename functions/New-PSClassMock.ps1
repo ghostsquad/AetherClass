@@ -149,7 +149,7 @@ if(-not (Get-PSClass 'GpClass.Mock')) {
 
             $member = $this._originalClass.__Members[$MemberName]
             if($member -eq $null) {
-                $msg = "Member with name: $MemberName cannot be found to mock!"
+                $msg = "Member with name: '$MemberName' does not exist on this class/mock."
                 throw (new-object PSMockException([ExceptionReason]::MockConsistencyCheckFailed, $msg))
             }
 
@@ -170,13 +170,8 @@ if(-not (Get-PSClass 'GpClass.Mock')) {
             try {
 
                 Guard-ArgumentNotNull 'MethodName' $MethodName
-
                 $member = $this._GetMemberFromOriginal($MethodName)
-
-                if($member -isnot [System.Management.Automation.PSScriptMethod]) {
-                    $msg = "Member {0} is not a PSScriptMethod." -f $MethodName
-                    throw (new-object PSMockException([ExceptionReason]::MockConsistencyCheckFailed, $msg))
-                }
+                AssertMemberType $member ([System.Management.Automation.PSScriptMethod])
 
                 $setupInfo = New-PSClassInstance 'GpClass.Mock.MethodSetupInfo' -ArgumentList @(
                     $this,
@@ -206,13 +201,7 @@ if(-not (Get-PSClass 'GpClass.Mock')) {
             try {
                 Guard-ArgumentNotNull 'PropertyName' $PropertyName
                 $member = $this._GetMemberFromOriginal($PropertyName)
-
-                if($member -isnot [System.Management.Automation.PSNoteProperty] `
-                    -and $member -isnot [System.Management.Automation.PSScriptProperty]) {
-
-                    $msg = "Member {0} is not a PSScriptProperty or PSNoteProperty." -f $PropertyName
-                    throw (new-object PSMockException([ExceptionReason]::MockConsistencyCheckFailed, $msg))
-                }
+                AssertMemberType $member ([System.Management.Automation.PSPropertyInfo])
 
                 $setupInfo = New-PSClassInstance 'GpClass.Mock.PropertySetupInfo' -ArgumentList @(
                     $this,
@@ -243,37 +232,40 @@ if(-not (Get-PSClass 'GpClass.Mock')) {
                 [string]$FailMessage
             )
 
-            Guard-ArgumentNotNull 'MethodName' $MethodName
-            Guard-ArgumentNotNull 'Expressions' $Expressions
-            Guard-ArgumentNotNull 'Times' $Times
+            # Rethrow resetting the call-stack so that
+            # callers see the exception as happening at
+            # this call site.
+            # TODO: see how to mangle the stacktrace so
+            # that the mock doesn't even show up there.
+            try {
+                Guard-ArgumentNotNull 'MethodName' $MethodName
+                Guard-ArgumentNotNull 'Expressions' $Expressions
+                Guard-ArgumentNotNull 'Times' $Times
 
-            $Expectations = New-Object System.Collections.ArrayList
-            foreach($expression in $Expressions) {
-                $msg = 'All objects in collection should be PSClass type GpClass.Mock.Expression'
-                Guard-ArgumentValid 'Expressions' $msg (ObjectIs-PSClassInstance $expression -PSClassName 'GpClass.Mock.Expression')
-                [Void]$Expectations.Add($expression.Predicate)
-            }
+                $member = $this._GetMemberFromOriginal($MethodName)
+                AssertMemberType $member ([System.Management.Automation.PSMethodInfo])
 
-            $callCount = 0
-            foreach($call in $this._mockedMethods[$methodName].Calls) {
-                if($this._ArgumentsMeetExpectations($call.Arguments, $Expectations)) {
-                    $callCount++
+                $Expectations = New-Object System.Collections.ArrayList
+                foreach($expression in $Expressions) {
+                    $msg = 'All objects in collection should be PSClass type GpClass.Mock.Expression'
+                    Guard-ArgumentValid 'Expressions' $msg (ObjectIs-PSClassInstance $expression -PSClassName 'GpClass.Mock.Expression')
+                    [Void]$Expectations.Add($expression.Predicate)
                 }
-            }
 
-            ifdebug {
-                'callCount: ' + $callCount
-                'times: ' + $Times.ToString()
-                'timesverify: ' + $Times.Verify($callCount)
-            }
+                $callCount = 0
+                foreach($call in $this._mockedMethods[$methodName].Calls) {
+                    if($this._ArgumentsMeetExpectations($call.Arguments, $Expectations)) {
+                        $callCount++
+                    }
+                }
 
-            if(-not $Times.Verify($callCount)) {
-                # Rethrow resetting the call-stack so that
-                # callers see the exception as happening at
-                # this call site.
-                # TODO: see how to mangle the stacktrace so
-                # that the mock doesn't even show up there.
-                try {
+                ifdebug {
+                    'callCount: ' + $callCount
+                    'times: ' + $Times.ToString()
+                    'timesverify: ' + $Times.Verify($callCount)
+                }
+
+                if(-not $Times.Verify($callCount)) {
                     $this._ThrowVerifyException($MethodName,
                         [InvocationType]::MethodCall,
                         $FailMessage,
@@ -282,9 +274,9 @@ if(-not (Get-PSClass 'GpClass.Mock')) {
                         $this._mockedMethods[$MethodName].Calls,
                         $Times,
                         $callCount)
-                } catch {
-                    throw $_.Exception.GetBaseException()
                 }
+            } catch {
+                throw $_.Exception.GetBaseException()
             }
         }
 
@@ -296,18 +288,21 @@ if(-not (Get-PSClass 'GpClass.Mock')) {
                 [string]$FailMessage
             )
 
-            Guard-ArgumentNotNull 'PropertyName' $PropertyName
-            Guard-ArgumentNotNull 'Times' $Times
+            # Rethrow resetting the call-stack so that
+            # callers see the exception as happening at
+            # this call site.
+            # TODO: see how to mangle the stacktrace so
+            # that the mock doesn't even show up there.
+            try {
+                Guard-ArgumentNotNull 'PropertyName' $PropertyName
+                Guard-ArgumentNotNull 'Times' $Times
 
-            $callCount = $this._mockedProperties[$PropertyName].Calls.Count
+                $member = $this._GetMemberFromOriginal($PropertyName)
+                AssertMemberType $member ([System.Management.Automation.PSPropertyInfo])
 
-            if(-not $Times.Verify($callCount)) {
-                # Rethrow resetting the call-stack so that
-                # callers see the exception as happening at
-                # this call site.
-                # TODO: see how to mangle the stacktrace so
-                # that the mock doesn't even show up there.
-                try {
+                $callCount = $this._mockedProperties[$PropertyName].Calls.Count
+
+                if(-not $Times.Verify($callCount)) {
                     $this._ThrowVerifyException($PropertyName,
                         [InvocationType]::PropertyGet,
                         $FailMessage,
@@ -316,10 +311,11 @@ if(-not (Get-PSClass 'GpClass.Mock')) {
                         $this._mockedProperties[$PropertyName].Calls,
                         $Times,
                         $callCount)
-                } catch {
-                    throw $_.Exception.GetBaseException()
                 }
+            } catch {
+                throw $_.Exception.GetBaseException()
             }
+
         }
 
         method 'VerifySet' {
@@ -331,28 +327,31 @@ if(-not (Get-PSClass 'GpClass.Mock')) {
                 [string]$FailMessage
             )
 
-            Guard-ArgumentNotNull 'PropertyName' $PropertyName
-            if($Expression -ne $null) {
-                Guard-ArgumentIsPSClassInstance 'Expression' $Expression 'GpClass.Mock.Expression'
-            }
-            Guard-ArgumentNotNull 'Times' $Times
+            # Rethrow resetting the call-stack so that
+            # callers see the exception as happening at
+            # this call site.
+            # TODO: see how to mangle the stacktrace so
+            # that the mock doesn't even show up there.
+            try {
+                Guard-ArgumentNotNull 'PropertyName' $PropertyName
+                $member = $this._GetMemberFromOriginal($PropertyName)
+                AssertMemberType $member ([System.Management.Automation.PSPropertyInfo])
 
-            $Expectations = @($Expression.Predicate)
-
-            $callCount = 0
-            foreach($call in $this._mockedProperties[$PropertyName].Calls) {
-                if($this._ArgumentsMeetExpectations($call.Arguments, $Expectations)) {
-                    $callCount++
+                if($Expression -ne $null) {
+                    Guard-ArgumentIsPSClassInstance 'Expression' $Expression 'GpClass.Mock.Expression'
                 }
-            }
+                Guard-ArgumentNotNull 'Times' $Times
 
-            if(-not $Times.Verify($callCount)) {
-                # Rethrow resetting the call-stack so that
-                # callers see the exception as happening at
-                # this call site.
-                # TODO: see how to mangle the stacktrace so
-                # that the mock doesn't even show up there.
-                try {
+                $Expectations = @($Expression.Predicate)
+
+                $callCount = 0
+                foreach($call in $this._mockedProperties[$PropertyName].Calls) {
+                    if($this._ArgumentsMeetExpectations($call.Arguments, $Expectations)) {
+                        $callCount++
+                    }
+                }
+
+                if(-not $Times.Verify($callCount)) {
                     $this._ThrowVerifyException($PropertyName,
                         [InvocationType]::PropertySet,
                         $FailMessage,
@@ -361,9 +360,9 @@ if(-not (Get-PSClass 'GpClass.Mock')) {
                         $this._mockedProperties[$PropertyName].Calls,
                         $Times,
                         $callCount)
-                } catch {
-                    throw $_.Exception.GetBaseException()
                 }
+            } catch {
+                throw $_.Exception.GetBaseException()
             }
         }
 
