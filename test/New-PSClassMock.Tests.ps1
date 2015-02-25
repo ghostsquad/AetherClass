@@ -27,7 +27,7 @@ Describe "New-PSClassMock" {
         $mock._mockedMethods['foo'].Setups.Count | Should Be 0
     }
 
-    It 'Mock Creation - Can Fool ObjectIs-PSClassInstance' {
+    It 'Mock Creation - Can Fool ObjectIs-PSClassInstance for same class' {
         $className = [Guid]::NewGuid().ToString()
         $testClass = New-PSClass $className {
             method 'foo' {}
@@ -35,6 +35,22 @@ Describe "New-PSClassMock" {
         $mock = New-PSClassMock $testClass
 
         ObjectIs-PSClassInstance $mock.Object $className | Should Be $true
+    }
+
+    It 'Mock Creation - Can Fool ObjectIs-PSClassInstance for derived class' {
+        $parentClassName = [Guid]::NewGuid().ToString()
+        $parentTestClass = New-PSClass $parentClassName {
+            method 'foo' {}
+        } -PassThru
+
+        $className = [Guid]::NewGuid().ToString()
+        $testClass = New-PSClass $className -Inherit $parentClassName {
+            method 'foo' {}
+        } -PassThru
+
+        $mock = New-PSClassMock $testClass
+
+        ObjectIs-PSClassInstance $mock.Object $parentClassName | Should Be $true
     }
 
     #region Method Setup
