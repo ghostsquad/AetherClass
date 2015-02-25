@@ -23,7 +23,15 @@ if(-not (Get-PSClass 'GpClass.Mock')) {
 
             $theMockObject = New-PSObject
             Attach-PSNote $theMockObject '____mock____' $this
+
+            # attach base class names
             $theMockObject.psobject.TypeNames.Insert(0, $Class.__ClassName);
+            $baseClass = $Class.__BaseClass
+            $i = 1
+            while($baseClass -ne $null) {
+                $theMockObject.psobject.TypeNames.Insert($i++, $baseClass.__ClassName);
+                $baseClass = $baseClass.__BaseClass
+            }
 
             $mockDefinition = $this
 
