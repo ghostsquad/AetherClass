@@ -1,4 +1,4 @@
-﻿namespace GpClass.Mock {
+﻿namespace Aether.Class.Mock {
     public enum ExceptionReason
     {
         NoSetup,

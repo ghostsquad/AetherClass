@@ -15,7 +15,7 @@ function Guard-ArgumentIsPSClassDefinition {
 
     Guard-ArgumentNotNull $ArgumentName $InputObject
 
-    $expectedTypeName = 'GpClass.PSClassDefinition'
+    $expectedTypeName = 'Aether.Class.PSClassDefinition'
     $foundClassInTypeNames = $false
     foreach($typeName in $InputObject.psobject.TypeNames) {
         if($typeName -eq $expectedTypeName) {

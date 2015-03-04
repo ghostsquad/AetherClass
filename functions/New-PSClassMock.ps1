@@ -1,8 +1,8 @@
 #TODO
-# Convert all PSMockException Messages to use GpClass.Properties.Resources
+# Convert all PSMockException Messages to use Aether.Class.Properties.Resources
 
-if(-not (Get-PSClass 'GpClass.Mock')) {
-    New-PSClass 'GpClass.Mock' {
+if(-not (Get-PSClass 'Aether.Class.Mock')) {
+    New-PSClass 'Aether.Class.Mock' {
         note '_strict' $false
         note '_originalClass'
         note '_mockedMethods'
@@ -36,13 +36,13 @@ if(-not (Get-PSClass 'GpClass.Mock')) {
             $mockDefinition = $this
 
             foreach($methodName in $Class.__Methods.Keys) {
-                $this._mockedMethods[$methodName] = New-PSClassInstance 'GpClass.Mock.MemberInfo'
+                $this._mockedMethods[$methodName] = New-PSClassInstance 'Aether.Class.Mock.MemberInfo'
 
                 $mockedMethodScript = {
                     #because $this & $args are automatic variables,
                     #the automatic version of the variable will
                     #override the any variable with the same name that may be captured from GetNewClosure()
-                    $callContext = New-PSClassInstance 'GpClass.Mock.CallContext' -ArgumentList @(
+                    $callContext = New-PSClassInstance 'Aether.Class.Mock.CallContext' -ArgumentList @(
                         $mockDefinition,
                         $methodName,
                         ([InvocationType]::MethodCall),
@@ -97,13 +97,13 @@ if(-not (Get-PSClass 'GpClass.Mock')) {
             $notesAndPropertyKeys.AddRange($Class.__Notes.Keys)
 
             foreach($propertyName in $notesAndPropertyKeys) {
-                $this._mockedProperties[$propertyName] = New-PSClassInstance 'GpClass.Mock.MemberInfo'
+                $this._mockedProperties[$propertyName] = New-PSClassInstance 'Aether.Class.Mock.MemberInfo'
 
                 $mockedPropertyGetScript = {
                     #because $this & $args are automatic variables,
                     #the automatic version of the variable will
                     #override the any variable with the same name that may be captured from GetNewClosure()
-                    $callContext = New-PSClassInstance 'GpClass.Mock.CallContext' -ArgumentList @(
+                    $callContext = New-PSClassInstance 'Aether.Class.Mock.CallContext' -ArgumentList @(
                         $mockDefinition,
                         $propertyName,
                         [InvocationType]::PropertyGet
@@ -122,7 +122,7 @@ if(-not (Get-PSClass 'GpClass.Mock')) {
                     #because $this & $args are automatic variables,
                     #the automatic version of the variable will
                     #override the any variable with the same name that may be captured from GetNewClosure()
-                    $callContext = New-PSClassInstance 'GpClass.Mock.CallContext' -ArgumentList @(
+                    $callContext = New-PSClassInstance 'Aether.Class.Mock.CallContext' -ArgumentList @(
                         $mockDefinition,
                         $propertyName,
                         [InvocationType]::PropertySet,
@@ -181,7 +181,7 @@ if(-not (Get-PSClass 'GpClass.Mock')) {
                 $member = $this._GetMemberFromOriginal($MethodName)
                 AssertMemberType $member ([System.Management.Automation.PSScriptMethod])
 
-                $setupInfo = New-PSClassInstance 'GpClass.Mock.MethodSetupInfo' -ArgumentList @(
+                $setupInfo = New-PSClassInstance 'Aether.Class.Mock.MethodSetupInfo' -ArgumentList @(
                     $this,
                     $MethodName,
                     $Expressions
@@ -211,7 +211,7 @@ if(-not (Get-PSClass 'GpClass.Mock')) {
                 $member = $this._GetMemberFromOriginal($PropertyName)
                 AssertMemberType $member ([System.Management.Automation.PSPropertyInfo])
 
-                $setupInfo = New-PSClassInstance 'GpClass.Mock.PropertySetupInfo' -ArgumentList @(
+                $setupInfo = New-PSClassInstance 'Aether.Class.Mock.PropertySetupInfo' -ArgumentList @(
                     $this,
                     $PropertyName,
                     $DefaultValue
@@ -255,8 +255,8 @@ if(-not (Get-PSClass 'GpClass.Mock')) {
 
                 $Expectations = New-Object System.Collections.ArrayList
                 foreach($expression in $Expressions) {
-                    $msg = 'All objects in collection should be PSClass type GpClass.Mock.Expression'
-                    Guard-ArgumentValid 'Expressions' $msg (ObjectIs-PSClassInstance $expression -PSClassName 'GpClass.Mock.Expression')
+                    $msg = 'All objects in collection should be PSClass type Aether.Class.Mock.Expression'
+                    Guard-ArgumentValid 'Expressions' $msg (ObjectIs-PSClassInstance $expression -PSClassName 'Aether.Class.Mock.Expression')
                     [Void]$Expectations.Add($expression.Predicate)
                 }
 
@@ -346,7 +346,7 @@ if(-not (Get-PSClass 'GpClass.Mock')) {
                 AssertMemberType $member ([System.Management.Automation.PSPropertyInfo])
 
                 if($Expression -ne $null) {
-                    Guard-ArgumentIsPSClassInstance 'Expression' $Expression 'GpClass.Mock.Expression'
+                    Guard-ArgumentIsPSClassInstance 'Expression' $Expression 'Aether.Class.Mock.Expression'
                 }
                 Guard-ArgumentNotNull 'Times' $Times
 
@@ -489,8 +489,8 @@ if(-not (Get-PSClass 'GpClass.Mock')) {
     }
 }
 
-if(-not (Get-PSClass 'GpClass.Mock.MemberInfo')) {
-    New-PSClass 'GpClass.Mock.MemberInfo' {
+if(-not (Get-PSClass 'Aether.Class.Mock.MemberInfo')) {
+    New-PSClass 'Aether.Class.Mock.MemberInfo' {
         note Setups
         note Calls
 
@@ -501,8 +501,8 @@ if(-not (Get-PSClass 'GpClass.Mock.MemberInfo')) {
     }
 }
 
-if(-not (Get-PSClass 'GpClass.Mock.SetupInfo')) {
-    New-PSClass 'GpClass.Mock.SetupInfo' {
+if(-not (Get-PSClass 'Aether.Class.Mock.SetupInfo')) {
+    New-PSClass 'Aether.Class.Mock.SetupInfo' {
         note 'Mock'
         note 'Name'
         note 'Expressions'
@@ -590,8 +590,8 @@ if(-not (Get-PSClass 'GpClass.Mock.SetupInfo')) {
     }
 }
 
-if(-not (Get-PSClass 'GpClass.Mock.PropertySetupInfo')) {
-    New-PSClass 'GpClass.Mock.PropertySetupInfo' -Inherit 'GpClass.Mock.SetupInfo' {
+if(-not (Get-PSClass 'Aether.Class.Mock.PropertySetupInfo')) {
+    New-PSClass 'Aether.Class.Mock.PropertySetupInfo' -Inherit 'Aether.Class.Mock.SetupInfo' {
         constructor {
             param (
                 $Mock,
@@ -607,8 +607,8 @@ if(-not (Get-PSClass 'GpClass.Mock.PropertySetupInfo')) {
     }
 }
 
-if(-not (Get-PSClass 'GpClass.Mock.MethodSetupInfo')) {
-    New-PSClass 'GpClass.Mock.MethodSetupInfo' -Inherit 'GpClass.Mock.SetupInfo' {
+if(-not (Get-PSClass 'Aether.Class.Mock.MethodSetupInfo')) {
+    New-PSClass 'Aether.Class.Mock.MethodSetupInfo' -Inherit 'Aether.Class.Mock.SetupInfo' {
         note 'ExceptionToThrow'
 
         constructor {
@@ -637,8 +637,8 @@ if(-not (Get-PSClass 'GpClass.Mock.MethodSetupInfo')) {
     }
 }
 
-if(-not (Get-PSClass 'GpClass.Mock.CallContext')) {
-    New-PSClass 'GpClass.Mock.CallContext' {
+if(-not (Get-PSClass 'Aether.Class.Mock.CallContext')) {
+    New-PSClass 'Aether.Class.Mock.CallContext' {
         note Mock
         note MemberName
         note InvocationType
@@ -671,8 +671,8 @@ if(-not (Get-PSClass 'GpClass.Mock.CallContext')) {
     }
 }
 
-if(-not (Get-PSClass 'GpClass.Mock.Expression')) {
-    New-PSClass 'GpClass.Mock.Expression' {
+if(-not (Get-PSClass 'Aether.Class.Mock.Expression')) {
+    New-PSClass 'Aether.Class.Mock.Expression' {
         note _stringRepresentation
         note Predicate
 
@@ -710,7 +710,7 @@ function New-PSClassMock {
         }
     }
 
-    return New-PSClassInstance 'GpClass.Mock' -ArgumentList @(
+    return New-PSClassInstance 'Aether.Class.Mock' -ArgumentList @(
         $Class,
         $Strict
     )

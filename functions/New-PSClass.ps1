@@ -1,5 +1,5 @@
 #TODO
-# Convert all PSClassException Messages to use GpClass.Properties.Resources
+# Convert all PSClassException Messages to use Aether.Class.Properties.Resources
 
 function New-PSClass {
     param (
@@ -135,7 +135,7 @@ function New-PSClass {
     Attach-PSNote $class __BaseClass $Inherit
     Attach-PSNote $class __ConstructorScript
 
-    $class.psobject.TypeNames.Insert(0, 'GpClass.PSClassDefinition');
+    $class.psobject.TypeNames.Insert(0, 'Aether.Class.PSClassDefinition');
 
     # This is how the caller can create a new instance of this class
     Attach-PSScriptMethod $class "New" {

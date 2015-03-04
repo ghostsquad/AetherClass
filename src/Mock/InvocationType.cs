@@ -1,4 +1,4 @@
-﻿namespace GpClass.Mock {
+﻿namespace Aether.Class.Mock {
     /// <summary>
     /// The invocation type.
     /// </summary>

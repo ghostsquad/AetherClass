@@ -1,4 +1,4 @@
-﻿namespace GpClass {
+﻿namespace Aether.Class {
     using System;
     using System.Management.Automation;
 

@@ -1,10 +1,10 @@
-namespace GpClass.Mock {
+namespace Aether.Class.Mock {
     using System;
     using System.Diagnostics;
     using System.Globalization;
     using System.Linq.Expressions;
 
-    using GpClass.Properties;
+    using Aether.Class.Properties;
 
     /// <summary>
     /// The guard.

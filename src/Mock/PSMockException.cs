@@ -1,4 +1,4 @@
-﻿namespace GpClass.Mock {
+﻿namespace Aether.Class.Mock {
     using System;
     using System.Diagnostics.CodeAnalysis;
     using System.Globalization;
@@ -6,7 +6,7 @@
     using System.Runtime.Serialization;
     using System.Security;
 
-    using GpClass.Properties;
+    using Aether.Class.Properties;
 
     /// <summary>
     /// Exception thrown by mocks when setups are not matched,
