@@ -3,8 +3,6 @@ GpClass
 
 Bringing Polymorphism &amp; Inheritance to PSObjects.
 
-Brought to you by [GhostSquad](https://github.com/ghostsquad) and [GravityPS](https://github.com/ghostsquad/GravityPS)
-
 So What Is It?
 ===========
 
@@ -59,11 +57,11 @@ Features:
 Name                   MemberType   Definition
 ----                   ----------   ----------
 ...
-__ClassDefinition__    NoteProperty GpClass.PSClassDefinition ...
+__ClassDefinition__    NoteProperty Aether.Class.PSClassDefinition ...
 Sing                   ScriptMethod System.Object Sing();
 Speak                  ScriptMethod System.Object Speak();
    ```
-   New-PSClass won't let you methods on subclasses that exist on parent classes without explicitly using `-override` (eg. `method -override mymethod {}`). In addition, if you try to override a method that doesn't exist on the parent (or farther up the tree), you will also get an exception. This is the compiler-like validation in action. More on this in the [WIKI](https://github.com/ghostsquad/GpClass/wiki)!
+   New-PSClass won't let you methods on subclasses that exist on parent classes without explicitly using `-override` (eg. `method -override mymethod {}`). In addition, if you try to override a method that doesn't exist on the parent (or farther up the tree), you will also get an exception. This is the compiler-like validation in action. More on this in the [WIKI](https://github.com/ghostsquad/AetherClass/wiki)!
 
 - Polymorphism
 
@@ -86,7 +84,7 @@ Speak                  ScriptMethod System.Object Speak();
       Guard-ArgumentIsPSClassInstance 'Animal' $Animal 'MyNamespace.Animals.AnimalBase'
    }
    ```   
-   More on this in the [WIKI](https://github.com/ghostsquad/GpClass/wiki)!
+   More on this in the [WIKI](https://github.com/ghostsquad/AetherClass/wiki)!
 
 More Than Syntactical Sugar
 ===========
