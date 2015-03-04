@@ -1,4 +1,4 @@
-GpClass
+AetherClass
 ===========
 
 Bringing Polymorphism &amp; Inheritance to PSObjects.
