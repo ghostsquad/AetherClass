@@ -1,4 +1,4 @@
-﻿namespace GpClass.Mock {
+﻿namespace Aether.Class.Mock {
     /// <summary>
     /// Options to customize the behavior of the psmock.
     /// </summary>

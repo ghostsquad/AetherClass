@@ -72,8 +72,8 @@ Describe "New-PSClassMock" {
         } -PassThru
         $mock = New-PSClassMock $testClass
         $actual = $mock.Setup('foo')
-        { ObjectIs-PSClassInstance $actual 'GpClass.SetupInfo' } | Should Be $true
-        { ObjectIs-PSClassInstance $actual 'GpClass.MethodSetupInfo' } | Should Be $true
+        { ObjectIs-PSClassInstance $actual 'Aether.Class.SetupInfo' } | Should Be $true
+        { ObjectIs-PSClassInstance $actual 'Aether.Class.MethodSetupInfo' } | Should Be $true
     }
 
     It 'Method Setup - MethodSetupInfo has MethodName' {

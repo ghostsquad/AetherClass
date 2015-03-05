@@ -3,9 +3,9 @@ $here = Split-Path -Parent $MyInvocation.MyCommand.Path
 . "$here\..\TestCommon.ps1"
 
 Describe 'ItIs-NotNull' {
-    It 'returns GpClass.Mock.Expression' {
+    It 'returns Aether.Class.Mock.Expression' {
         $actualResult = ItIs-NotNull
-        (ObjectIs-PSClassInstance $actualResult -PSClassName 'GpClass.Mock.Expression') | Should Be $true
+        (ObjectIs-PSClassInstance $actualResult -PSClassName 'Aether.Class.Mock.Expression') | Should Be $true
     }
 
     It 'has accurate representation of provided expression when ToString()' {

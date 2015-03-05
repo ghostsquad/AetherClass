@@ -14,7 +14,7 @@ function ItIs-Expression {
         $expStr = $Expression.ToString()
     }
 
-    $expressionInstance = New-PSClassInstance 'GpClass.Mock.Expression' -ArgumentList @(
+    $expressionInstance = New-PSClassInstance 'Aether.Class.Mock.Expression' -ArgumentList @(
         $Expression,
         $expStr
     )

@@ -1,10 +1,10 @@
 ﻿<#############################################################################
-The GpClass module adds "Classes" to Powershell. A Class in .NET is
+The AetherClass module adds "Classes" to Powershell. A Class in .NET is
 essentially a definition of an object. When a new object is created, it
 contains the private and public methods, fields (notes) & properties according
 to the class definition. In the same way, we can do that in PowerShell. New-PSClass
 allows you to define the properties, notes, & methods that should be attached to
-a PSObject when it is created. GpClass also enables inheritance &
+a PSObject when it is created. Aether.Class also enables inheritance &
 code contracts (think abstract class or interface), which is simply put, allows
 multiple class definitions to be combined (& overwritten) upon creation of the object.
 
@@ -13,31 +13,24 @@ as expected. Using static methods/properties, allows decluttering of the Global 
 as well as easy/reliable access to variables that would be guaranteed to exist
 (because they are defined in the class).
 
-The MIT License (MIT)
-
 Copyright (c) 2014 Wes McNamee
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+       http://www.apache.org/licenses/LICENSE-2.0
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+
 #############################################################################>
 
 @{
-      ModuleToProcess = 'GpClass.psm1'
+      ModuleToProcess = 'AetherClass.psm1'
 
         ModuleVersion = '0.1.6'
 
@@ -49,12 +42,12 @@ SOFTWARE.
 
             Copyright = 'Copyright 2014 Weston McNamee'
 
-          Description = 'The GpClass module adds "Classes" to Powershell. A Class in .NET is essentially a definition of an object. When a new object is created, it contains the private and public methods, fields (notes) & properties according to the class definition. In the same way, we can do that in PowerShell. New-PSClass allows you to define the properties, notes, & methods that should be attached to a PSObject when it is created. PondPSClass also enables inheritance & code contracts (think abstract class or interface), which is simply put, allows multiple class definitions to be combined (& overwritten) upon creation of the object. Static methods are also supported, and are become methods attached to the Class object as expected. Using static methods/properties, allows decluttering of the Global scope, as well as easy/reliable access to variables that would be guaranteed to exist (because they are defined in the class).'
+          Description = 'The Aether.Class module adds "Classes" to Powershell. A Class in .NET is essentially a definition of an object. When a new object is created, it contains the private and public methods, fields (notes) & properties according to the class definition. In the same way, we can do that in PowerShell. New-PSClass allows you to define the properties, notes, & methods that should be attached to a PSObject when it is created. AetherClass also enables inheritance & code contracts (think abstract class or interface), which is simply put, allows multiple class definitions to be combined (& overwritten) upon creation of the object. Static methods are also supported, and are become methods attached to the Class object as expected. Using static methods/properties, allows decluttering of the Global scope, as well as easy/reliable access to variables that would be guaranteed to exist (because they are defined in the class).'
 
     PowerShellVersion = '3.0'
 
          NestedModules = @(
-                        'GravityPS'
+                        'AetherCore'
                         'PSCX'
                         )
 
@@ -82,9 +75,9 @@ SOFTWARE.
 
              FileList = @(
                         'LICENSE'
-                        'GpClass.psd1'
-                        'GpClass.psm1'
-                        'GpClass.dll'
+                        'AetherClass.psd1'
+                        'AetherClass.psm1'
+                        'AetherClass.dll'
                         'functions\Attach-PSClassConstructor.ps1'
                         'functions\Attach-PSClassMethod.ps1'
                         'functions\Attach-PSClassNote.ps1'
@@ -112,8 +105,8 @@ SOFTWARE.
           PrivateData = @{
                             PSData = @{
                                 Tags = 'gravity class psclass'
-                                LicenseUri = 'http://opensource.org/licenses/MIT'
-                                ProjectUri = 'https://github.com/GhostSquad/GpClass'
+                                LicenseUri = 'http://www.apache.org/licenses/LICENSE-2.0'
+                                ProjectUri = 'https://github.com/GhostSquad/AetherClass'
                                 IconUri = ''
                                 ReleaseNotes = ''
                             }
