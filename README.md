@@ -15,9 +15,9 @@ public Class Foo {
 }
 "@
 ```
-What's wrong with this? There's nothing necessarily wrong with C#, but there are some interesting gotchas and intricacies that you should know when mixing C# and Powershell. This has to compile, and is not easy to debug without a debugger like Visual Studio.
+What's wrong with this? There's nothing necessarily wrong with C#, but there are some interesting gotchas and intricacies that you should know when mixing C# and Powershell. Such as debugging.
 
-Ok, so how about this:
+Ok, so how about this?
 ```Powershell
 function New-Foo {
     $o = new-object
@@ -38,13 +38,13 @@ Features:
    ```Powershell
    PS> New-PSClass 'Animal' {
      Method 'Speak' {
-        Write-Host 'The animal speaks'
+        Write-Host 'Hello World!'
      }
    }
    
    PS> New-PSClass 'SingingAnimal' -Inherit 'Animal' {
      Method 'Sing' {
-        Write-Host 'The animal singles'
+        Write-Host 'La La La La!'
      }
    }
 
