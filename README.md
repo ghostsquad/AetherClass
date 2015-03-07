@@ -65,7 +65,7 @@ Speak                  ScriptMethod System.Object Speak();
 
 - Polymorphism
 
-   Each object that's created has an inheritance hierarchy, and that makes it possible to assert that the object you are receiving meets the code contract similar to:
+   Each object that's created has an inheritance hierarchy, and that makes it possible to assert that the object you are receiving meets the code contract.
 
    ```Powershell
    # forcing .NET type parameters
