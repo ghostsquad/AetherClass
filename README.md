@@ -61,7 +61,7 @@ __ClassDefinition__    NoteProperty Aether.Class.PSClassDefinition ...
 Sing                   ScriptMethod System.Object Sing();
 Speak                  ScriptMethod System.Object Speak();
    ```
-   New-PSClass won't let you methods on subclasses that exist on parent classes without explicitly using `-override` (eg. `method -override mymethod {}`). In addition, if you try to override a method that doesn't exist on the parent (or farther up the tree), you will also get an exception. This is the compiler-like validation in action. More on this in the [WIKI](https://github.com/ghostsquad/AetherClass/wiki)!
+   New-PSClass will throw an exception if you try to declare a method on a derived class that _already exists_ on a parent class with explicitly using the `-override` flag on the method declaration. This saves you from overriding something that you didn't mean to override. On the flip side, if you try to override a method that _doesn't_ exist on one of the base classes, you will also get an exception. This is the compiler-like validation in action. More on this in the [WIKI](https://github.com/ghostsquad/AetherClass/wiki)!
 
 - Polymorphism
 
@@ -111,7 +111,7 @@ function Update-Files {
 This is just a simple example showing a tight-coupling to several built-in cmdlets, and ultimately the FileSystem that the code is being run against.
 
 **How would you test this?**
-You could use a framework like Pester, and Mock the Get-ChildItem, Get-Content, and Out-File functions, But will your test survive if it's refactored for increased performance and reduced memory overhead like this?
+You could use a framework like Pester, and Mock the Get-ChildItem, Get-Content, and Out-File functions. However, you should consider whether or not your test survive if it's refactored like below.
 
 ```Powershell
 # don't bash the example for not being idempotent
@@ -135,7 +135,7 @@ function Update-Files {
 }
 ```
 
-Not only will your test not survive this refactor, but you may actually endup up modifying files on your filesystem the first time you run your test. There are lots of articles like [Test Behavior Not Implementation](http://googletesting.blogspot.com/2013/08/testing-on-toilet-test-behavior-not.html) that explain how to write good tests. I highly suggest reading these if you aren't familiar with concepts like Dependency Injection, Behavior-Driven Development and Test-Driven Development.
+Not only will your test not survive this refactor, but you may actually end up modifying files on your filesystem the first time you run your test. There are lots of articles like [Test Behavior Not Implementation](http://googletesting.blogspot.com/2013/08/testing-on-toilet-test-behavior-not.html) that explain how to write good tests. I highly suggest reading these if you aren't familiar with concepts like Dependency Injection, Behavior-Driven Development and Test-Driven Development.
 
 ### How can I do this right?
 
@@ -220,6 +220,6 @@ Describe 'Scripts.UpdateFilesCommand' {
 }
 ```
 
-You'll see that we create a concrete psclass that simply delegates to well tested methods from .NET. By creating a psclass around the .NET methods, we can mock this behavior to allowing testing of our own code without touching the filesystem. We are also creating a `UpdateFilesCommand` psclass that will do all the heavy lifting. The `Update-Files` function now serves as the [composition root](http://visualstudiomagazine.com/articles/2014/06/01/how-to-refactor-for-dependency-injection.aspx). The only major part that's missing here is the end2end test that validates that you wrote your composition root correctly. Everything else can be taken apart, and unit tested.
+It's a little bit more code than the first attempt, but now you've decoupled your code, and encapsulated some static methods that you can know mock. You'll see that we create a concrete psclass that simply delegates to well tested methods from .NET. By creating a psclass around the .NET methods, we can mock this behavior to allowing testing of our own code without touching the filesystem. We are also creating a `UpdateFilesCommand` psclass that will do all the heavy lifting. The `Update-Files` function now serves as the [composition root](http://visualstudiomagazine.com/articles/2014/06/01/how-to-refactor-for-dependency-injection.aspx). The only major part that's missing here is the end2end test that validates that you wrote your composition root correctly. Everything else can be taken apart, and unit tested.
 
 I consider every public function/cmdlet as a "mini application". They should not rely on variables in parent scopes, or the global scope whenever possible. Dependencies not in your direct control (like config files), should be initialized as early as possible to see the error before any work begins. Failing early is key. That's essentially what a compiler is doing for you. Helping you fail early. We don't have that luxury in PowerShell, so there's a balancing act, and it puts more responsibility on the developer to do it right.
