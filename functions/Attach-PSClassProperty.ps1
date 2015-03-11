@@ -1,17 +1,34 @@
 # - - - - - - - - - - - - - - - - - - - - - - - -
-# Subfunction: property
+# Helper function
 #   Add a property to Class definition or
 #   attaches it to the Class if it is static
 # - - - - - - - - - - - - - - - - - - - - - - - -
 function Attach-PSClassProperty {
+    [cmdletbinding()]
     param (
-        [psobject]$Class
-      , [string]$name
-      , [scriptblock]$get
-      , [scriptblock]$set
-      , [switch]$static
-      , [switch]$override
+        [psobject]$Class,
+
+        [Parameter(Position=0)]
+        [string]$name,
+
+        [Parameter(Position=1)]
+        [scriptblock]$get,
+
+        [Parameter(Position=2)]
+        [scriptblock]$set,
+
+        [switch]$static,
+        [switch]$override
     )
+
+    if($Class -eq $null) {
+        Write-Debug 'Attempting to get $Class from parent scope (1)'
+        $Class = (Get-Variable -name 'Class' -ValueOnly -Scope 1 -ErrorAction Ignore)
+        if($Class -eq $null) {
+            Write-Debug 'Attempting to get $Class from grandparent scope (2)'
+            $Class = (Get-Variable -name 'Class' -ValueOnly -Scope 2 -ErrorAction Ignore)
+        }
+    }
 
     if ($static) {
         Attach-PSProperty $Class $name $get $set

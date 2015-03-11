@@ -73,6 +73,13 @@ Copyright (c) 2014 Wes McNamee
                         'ObjectIs-PSClassInstance'
                         )
 
+      AliasesToExport = @(
+                        'constructor'
+                        'method'
+                        'note'
+                        'property'
+                        )
+
              FileList = @(
                         'LICENSE'
                         'AetherClass.psd1'

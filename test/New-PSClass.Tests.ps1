@@ -73,6 +73,7 @@ Describe 'New-PSClass' {
             $className = [Guid]::NewGuid().ToString()
             $testClass = New-PSClass $className {
                 constructor {
+                    breakpoint
                     $this.foo = 'set by constructor'
                 }
 
@@ -486,6 +487,21 @@ Describe 'New-PSClass' {
 
             $instance.collection1.Count | Should Be 3
             $instance.collection2.Count | Should Be 5
+        }
+
+        It 'Scope - Can access variable from outside of module scope' {
+            $mytestvariable = 'i am a test variable'
+
+            $testClassName = [Guid]::NewGuid().ToString()
+            $testClass = New-PSClass $testClassName {
+                method 'getoutside' {
+                    return $mytestvariable
+                }
+            } -PassThru
+
+            $sut = $testClass.New()
+
+            $sut.getoutside() | Should Be $mytestvariable
         }
     }
 

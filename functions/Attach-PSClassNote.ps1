@@ -3,13 +3,28 @@
 #   Adds Notes record to class if non-static
 # - - - - - - - - - - - - - - - - - - - - - - - -
 function Attach-PSClassNote {
+    [cmdletbinding()]
     param (
-        [psobject]$Class
-      , [string]$name = $(Throw "Note Name is required.")
-      , [object]$value
-      , [switch]$static
-      , [switch]$forceValueAssignment
+        [psobject]$Class,
+
+        [Parameter(Position=0)]
+        [string]$name = $(Throw "Note Name is required."),
+
+        [Parameter(Position=1)]
+        [object]$value,
+
+        [switch]$static,
+        [switch]$forceValueAssignment
     )
+
+    if($Class -eq $null) {
+        Write-Debug 'Attempting to get $Class from parent scope (1)'
+        $Class = (Get-Variable -name 'Class' -ValueOnly -Scope 1 -ErrorAction Ignore)
+        if($Class -eq $null) {
+            Write-Debug 'Attempting to get $Class from grandparent scope (2)'
+            $Class = (Get-Variable -name 'Class' -ValueOnly -Scope 2 -ErrorAction Ignore)
+        }
+    }
 
     if ($static) {
         Attach-PSNote $Class $name $value

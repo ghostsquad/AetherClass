@@ -34,7 +34,7 @@ function New-PSClass {
     # Subfunction: constructor
     #   Assigns Constructor script to Class
     # - - - - - - - - - - - - - - - - - - - - - - - -
-    function constructor {
+    <# function constructor {
         param (
             [scriptblock]$scriptblock = $(Throw "Constuctor scriptblock is required.")
         )
@@ -121,7 +121,7 @@ function New-PSClass {
         }
 
         Attach-PSClassMethod @splat
-    }
+    } #>
     #endregion Class Definition Functions
 
     $class = New-PSObject
@@ -168,7 +168,10 @@ function New-PSClass {
     # $Definition.getnewclosure().InvokeReturnAsIs()
     # & $Definition.getnewclosure()
     # & $Definition
-    [Void]([ScriptBlock]::Create($Definition.ToString()).InvokeReturnAsIs())
+
+    [Void](& $Definition)
+
+    #[Void]([ScriptBlock]::Create($Definition.ToString()).InvokeReturnAsIs())
 
     [Void]$Global:__PSClassDefinitions__.Add($ClassName, $class)
 
@@ -278,7 +281,7 @@ function PSClass_RunClassConstructor {
     $private:p1, $private:p2, $private:p3, $private:p4, $private:p5, $private:p6, `
         $private:p7, $private:p8, $private:p9, $private:p10 = $args
     switch($args.Count) {
-        0 {  [Void]($____Class____.__ConstructorScript.InvokeReturnAsIs()) }
+        0 {  [Void](. $____Class____.__ConstructorScript) }
         1 {  [Void]($____Class____.__ConstructorScript.InvokeReturnAsIs($p1)) }
         2 {  [Void]($____Class____.__ConstructorScript.InvokeReturnAsIs($p1, $p2)) }
         3 {  [Void]($____Class____.__ConstructorScript.InvokeReturnAsIs($p1, $p2, $p3)) }
@@ -298,3 +301,24 @@ function PSClass_RunClassConstructor {
 if (-not (test-path variable:\Global:__PSClassDefinitions__)) {
     $Global:__PSClassDefinitions__ = New-GenericObject System.Collections.Generic.Dictionary string,psobject
 }
+
+if(-not (Get-Alias 'constructor' -ErrorAction Ignore)) {
+    New-Alias -Name 'constructor' -Value 'Attach-PSClassConstructor' -Option Readonly -Scope Global
+}
+
+if(-not (Get-Alias 'method' -ErrorAction Ignore)) {
+    New-Alias -Name 'method' -Value 'Attach-PSClassMethod' -Option Readonly -Scope Global
+}
+
+if(-not (Get-Alias 'note' -ErrorAction Ignore)) {
+    New-Alias -Name 'note' -Value 'Attach-PSClassNote' -Option Readonly -Scope Global
+}
+
+if(-not (Get-Alias 'property' -ErrorAction Ignore)) {
+    New-Alias -Name 'property' -Value 'Attach-PSClassProperty' -Option Readonly -Scope Global
+}
+
+Export-ModuleMember -Alias constructor
+Export-ModuleMember -Alias method
+Export-ModuleMember -Alias note
+Export-ModuleMember -Alias property
