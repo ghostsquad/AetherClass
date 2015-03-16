@@ -489,19 +489,36 @@ Describe 'New-PSClass' {
             $instance.collection2.Count | Should Be 5
         }
 
-        It 'Scope - Can access variable from outside of module scope' {
-            $mytestvariable = 'i am a test variable'
+        It 'Scope - Method - Can access function from outside of module scope' {
+            function iamatestfunc { return 'i am a test function' }
 
             $testClassName = [Guid]::NewGuid().ToString()
             $testClass = New-PSClass $testClassName {
                 method 'getoutside' {
-                    return $mytestvariable
+                    return (iamatestfunc)
                 }
             } -PassThru
 
             $sut = $testClass.New()
 
-            $sut.getoutside() | Should Be $mytestvariable
+            $sut.getoutside() | Should Be 'i am a test function'
+        }
+
+        It 'Scope - Constructor - Can access function from outside of module scope' {
+            function iamatestfunc { return 'i am a test function' }
+
+            $testClassName = [Guid]::NewGuid().ToString()
+            $testClass = New-PSClass $testClassName {
+                note outsidesetnote
+
+                constructor {
+                    $this.outsidesetnote = (iamatestfunc)
+                }
+            } -PassThru
+
+            $sut = $testClass.New()
+
+            $sut.outsidesetnote() | Should Be 'i am a test function'
         }
     }
 
