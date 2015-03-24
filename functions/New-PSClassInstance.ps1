@@ -4,8 +4,8 @@ function New-PSClassInstance {
         [object[]]$ArgumentList
     )
 
-    if($ArgumentList -eq $null) {
-        $ArgumentList = $args
+    if([object]::ReferenceEquals($ArgumentList, $null) -or $ArgumentList.Count -eq 0) {
+        [object[]]$ArgumentList = $args
     }
 
     $private:PSClass = Get-PSClass $ClassName
