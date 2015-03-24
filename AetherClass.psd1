@@ -32,7 +32,7 @@ Copyright (c) 2014 Wes McNamee
 @{
       ModuleToProcess = 'AetherClass.psm1'
 
-        ModuleVersion = '0.1.6'
+        ModuleVersion = '0.1.7'
 
                  GUID = '6A8B9F36-50C2-4794-AFD5-9F59263E9080'
 
