@@ -5,6 +5,7 @@ if(-not (Get-PSClass 'Aether.Class.Mock')) {
     New-PSClass 'Aether.Class.Mock' {
         note '_strict' $false
         note '_originalClass'
+        note '_originalClassHierarchyMembers'
         note '_mockedMethods'
         note '_mockedProperties'
         note 'Object'
@@ -18,133 +19,51 @@ if(-not (Get-PSClass 'Aether.Class.Mock')) {
             Guard-ArgumentIsPSClassDefinition 'Class' $Class
 
             $this._originalClass = $Class
+            $this._originalClassHierarchyMembers = @{}
             $this._mockedMethods = @{}
             $this._mockedProperties = @{}
 
             $theMockObject = New-PSObject
             Attach-PSNote $theMockObject '____mock____' $this
 
+            # deal with class names, members from inheritance tree
+
             # attach base class names
-            $theMockObject.psobject.TypeNames.Insert(0, $Class.__ClassName);
-            $baseClass = $Class.__BaseClass
-            $i = 1
-            while($baseClass -ne $null) {
-                $theMockObject.psobject.TypeNames.Insert($i++, $baseClass.__ClassName);
-                $baseClass = $baseClass.__BaseClass
+            $classToAnalyze = $Class
+            $i = 0
+            while($classToAnalyze -ne $null) {
+                foreach($key in $classToAnalyze.__Members.Keys) {
+                    [Void]$this._originalClassHierarchyMembers.Add($key, $classToAnalyze.__Members[$key])
+                }
+
+                $theMockObject.psobject.TypeNames.Insert($i++, $classToAnalyze.__ClassName);
+                $classToAnalyze = $classToAnalyze.__BaseClass
             }
 
             $mockDefinition = $this
 
-            foreach($methodName in $Class.__Methods.Keys) {
-                $this._mockedMethods[$methodName] = New-PSClassInstance 'Aether.Class.Mock.MemberInfo'
+            foreach($memberName in $this._originalClassHierarchyMembers.Keys) {
+                $mockMemberInfo = New-PSClassInstance 'Aether.Class.Mock.MemberInfo'
 
-                $mockedMethodScript = {
-                    #because $this & $args are automatic variables,
-                    #the automatic version of the variable will
-                    #override the any variable with the same name that may be captured from GetNewClosure()
-                    $callContext = New-PSClassInstance 'Aether.Class.Mock.CallContext' -ArgumentList @(
-                        $mockDefinition,
-                        $methodName,
-                        ([InvocationType]::MethodCall),
-                        $args
-                    )
+                if($this._originalClassHierarchyMembers[$memberName] -is ([System.Management.Automation.PSScriptMethod])) {
+                    $this._mockedMethods[$memberName] = $mockMemberInfo
 
-                    [void]$mockDefinition._mockedMethods[$methodName].Calls.Add($callContext)
-
-                    $methodSetupInfo = $mockDefinition._GetMethodSetupInfoThatMeetExpectations($methodName, $args, $true)
-
-                    if($methodSetupInfo -eq $null) {
-                        if($Strict) {
-                            $msg = "This Mock is strict and no setups were configured for method {0}" -f $methodName
-                            throw (new-object PSMockException([ExceptionReason]::MockConsistencyCheckFailed, $msg))
-                        }
-
-                        return
-                    }
-
-                    [Void]$methodSetupInfo.Invocations.Add($callContext)
-                    if($methodSetupInfo.ExceptionToThrow -ne $null) {
-                        throw $methodSetupInfo.ExceptionToThrow
-                    }
-
-                    $private:p1, $private:p2, $private:p3, $private:p4, $private:p5, $private:p6, `
-                        $private:p7, $private:p8, $private:p9, $private:p10 = $args
-                    switch($args.Count) {
-                        0 {  [Void]($methodSetupInfo.CallBackAction.InvokeReturnAsIs()) }
-                        1 {  [Void]($methodSetupInfo.CallBackAction.InvokeReturnAsIs($p1)) }
-                        2 {  [Void]($methodSetupInfo.CallBackAction.InvokeReturnAsIs($p1, $p2)) }
-                        3 {  [Void]($methodSetupInfo.CallBackAction.InvokeReturnAsIs($p1, $p2, $p3)) }
-                        4 {  [Void]($methodSetupInfo.CallBackAction.InvokeReturnAsIs($p1, $p2, $p3, $p4)) }
-                        5 {  [Void]($methodSetupInfo.CallBackAction.InvokeReturnAsIs($p1, $p2, $p3, $p4, $p5)) }
-                        6 {  [Void]($methodSetupInfo.CallBackAction.InvokeReturnAsIs($p1, $p2, $p3, $p4, $p5, $p6)) }
-                        7 {  [Void]($methodSetupInfo.CallBackAction.InvokeReturnAsIs($p1, $p2, $p3, $p4, $p5, $p6, $p7)) }
-                        8 {  [Void]($methodSetupInfo.CallBackAction.InvokeReturnAsIs($p1, $p2, $p3, $p4, $p5, $p6, $p7, $p8)) }
-                        9 {  [Void]($methodSetupInfo.CallBackAction.InvokeReturnAsIs($p1, $p2, $p3, $p4, $p5, $p6, $p7, $p8, $p9)) }
-                        10 { [Void]($methodSetupInfo.CallBackAction.InvokeReturnAsIs($p1, $p2, $p3, $p4, $p5, $p6, $p7, $p8, $p9, $p10)) }
-                        default {
-                            throw (new-object PSClassException("PSClassMock Callbacks do not support more than 10 arguments."))
-                        }
-                    }
-
-                    return $methodSetupInfo.ReturnValue
-                }.GetNewClosure()
-
-                Attach-PSScriptMethod $theMockObject $methodName $mockedMethodScript
-            }
-
-            $notesAndPropertyKeys = New-Object System.Collections.Arraylist
-            $notesAndPropertyKeys.AddRange($Class.__Properties.Keys)
-            $notesAndPropertyKeys.AddRange($Class.__Notes.Keys)
-
-            foreach($propertyName in $notesAndPropertyKeys) {
-                $this._mockedProperties[$propertyName] = New-PSClassInstance 'Aether.Class.Mock.MemberInfo'
-
-                $mockedPropertyGetScript = {
-                    #because $this & $args are automatic variables,
-                    #the automatic version of the variable will
-                    #override the any variable with the same name that may be captured from GetNewClosure()
-                    $callContext = New-PSClassInstance 'Aether.Class.Mock.CallContext' -ArgumentList @(
-                        $mockDefinition,
-                        $propertyName,
-                        [InvocationType]::PropertyGet
-                    )
-
-                    [void]$mockDefinition._mockedProperties[$propertyName].Calls.Add($callContext)
-
-                    $setups = $mockDefinition._mockedProperties[$propertyName].Setups
-
-                    if($setups.Count -gt 0) {
-                        return $setups[0].ReturnValue
-                    }
-                }.GetNewClosure()
-
-                $mockedPropertySetScript = {
-                    #because $this & $args are automatic variables,
-                    #the automatic version of the variable will
-                    #override the any variable with the same name that may be captured from GetNewClosure()
-                    $callContext = New-PSClassInstance 'Aether.Class.Mock.CallContext' -ArgumentList @(
-                        $mockDefinition,
-                        $propertyName,
-                        [InvocationType]::PropertySet,
-                        $Args[0]
-                    )
-
-                    [void]$mockDefinition._mockedProperties[$propertyName].Calls.Add($callContext)
-
-                    if($Strict -and $mockDefinition._mockedProperties[$propertyName].Setups.Count -eq 0) {
-                        $msg = "This Mock is strict and no setups were configured for setter of property $propertyName"
-                        throw (new-object PSMockException([ExceptionReason]::MockConsistencyCheckFailed, $msg))
-                    }
-                }.GetNewClosure()
-
-                $attachSplat = @{
-                    InputObject = $theMockObject
-                    Name = $propertyName
-                    Get = $mockedPropertyGetScript
-                    Set = $mockedPropertySetScript
+                    Attach-PSScriptMethod $theMockObject $memberName $MockedMethodScriptBlock.GetNewClosure()
                 }
 
-                Attach-PSProperty @attachSplat
+                # PSPropertyInfo is the base class of noteProperties and scriptProperties
+                if($this._originalClassHierarchyMembers[$memberName] -is ([System.Management.Automation.PSPropertyInfo])) {
+                    $this._mockedProperties[$memberName] = $mockMemberInfo
+
+                    $attachSplat = @{
+                        InputObject = $theMockObject
+                        Name = $memberName
+                        Get = $MockedPropertyGetScriptBlock.GetNewClosure()
+                        Set = $MockedPropertySetScriptBlock.GetNewClosure()
+                    }
+
+                    Attach-PSProperty @attachSplat
+                }
             }
 
             $this.Object = $theMockObject
@@ -155,7 +74,7 @@ if(-not (Get-PSClass 'Aether.Class.Mock')) {
                 [string]$memberName
             )
 
-            $member = $this._originalClass.__Members[$MemberName]
+            $member = $this._originalClassHierarchyMembers[$MemberName]
             if($member -eq $null) {
                 $msg = "Member with name: '$MemberName' does not exist on this class/mock."
                 throw (new-object PSMockException([ExceptionReason]::MockConsistencyCheckFailed, $msg))
@@ -714,4 +633,93 @@ function New-PSClassMock {
         $Class,
         $Strict
     )
+}
+
+$MockedMethodScriptBlock = {
+    #because $this & $args are automatic variables,
+    #the automatic version of the variable will
+    #override the any variable with the same name that may be captured from GetNewClosure()
+    $callContext = New-PSClassInstance 'Aether.Class.Mock.CallContext' -ArgumentList @(
+        $mockDefinition,
+        $memberName,
+        ([InvocationType]::MethodCall),
+        $args
+    )
+
+    [void]$mockDefinition._mockedMethods[$memberName].Calls.Add($callContext)
+
+    $methodSetupInfo = $mockDefinition._GetMethodSetupInfoThatMeetExpectations($memberName, $args, $true)
+
+    if($methodSetupInfo -eq $null) {
+        if($Strict) {
+            $msg = "This Mock is strict and no setups were configured for method {0}" -f $memberName
+            throw (new-object PSMockException([ExceptionReason]::MockConsistencyCheckFailed, $msg))
+        }
+
+        return
+    }
+
+    [Void]$methodSetupInfo.Invocations.Add($callContext)
+    if($methodSetupInfo.ExceptionToThrow -ne $null) {
+        throw $methodSetupInfo.ExceptionToThrow
+    }
+
+    $private:p1, $private:p2, $private:p3, $private:p4, $private:p5, $private:p6, `
+        $private:p7, $private:p8, $private:p9, $private:p10 = $args
+    switch($args.Count) {
+        0 {  [Void]($methodSetupInfo.CallBackAction.InvokeReturnAsIs()) }
+        1 {  [Void]($methodSetupInfo.CallBackAction.InvokeReturnAsIs($p1)) }
+        2 {  [Void]($methodSetupInfo.CallBackAction.InvokeReturnAsIs($p1, $p2)) }
+        3 {  [Void]($methodSetupInfo.CallBackAction.InvokeReturnAsIs($p1, $p2, $p3)) }
+        4 {  [Void]($methodSetupInfo.CallBackAction.InvokeReturnAsIs($p1, $p2, $p3, $p4)) }
+        5 {  [Void]($methodSetupInfo.CallBackAction.InvokeReturnAsIs($p1, $p2, $p3, $p4, $p5)) }
+        6 {  [Void]($methodSetupInfo.CallBackAction.InvokeReturnAsIs($p1, $p2, $p3, $p4, $p5, $p6)) }
+        7 {  [Void]($methodSetupInfo.CallBackAction.InvokeReturnAsIs($p1, $p2, $p3, $p4, $p5, $p6, $p7)) }
+        8 {  [Void]($methodSetupInfo.CallBackAction.InvokeReturnAsIs($p1, $p2, $p3, $p4, $p5, $p6, $p7, $p8)) }
+        9 {  [Void]($methodSetupInfo.CallBackAction.InvokeReturnAsIs($p1, $p2, $p3, $p4, $p5, $p6, $p7, $p8, $p9)) }
+        10 { [Void]($methodSetupInfo.CallBackAction.InvokeReturnAsIs($p1, $p2, $p3, $p4, $p5, $p6, $p7, $p8, $p9, $p10)) }
+        default {
+            throw (new-object PSClassException("PSClassMock Callbacks do not support more than 10 arguments."))
+        }
+    }
+
+    return $methodSetupInfo.ReturnValue
+}
+
+$MockedPropertyGetScriptBlock = {
+    #because $this & $args are automatic variables,
+    #the automatic version of the variable will
+    #override the any variable with the same name that may be captured from GetNewClosure()
+    $callContext = New-PSClassInstance 'Aether.Class.Mock.CallContext' -ArgumentList @(
+        $mockDefinition,
+        $memberName,
+        [InvocationType]::PropertyGet
+    )
+
+    [void]$mockDefinition._mockedProperties[$memberName].Calls.Add($callContext)
+
+    $setups = $mockDefinition._mockedProperties[$memberName].Setups
+
+    if($setups.Count -gt 0) {
+        return $setups[0].ReturnValue
+    }
+}
+
+$MockedPropertySetScriptBlock = {
+    #because $this & $args are automatic variables,
+    #the automatic version of the variable will
+    #override the any variable with the same name that may be captured from GetNewClosure()
+    $callContext = New-PSClassInstance 'Aether.Class.Mock.CallContext' -ArgumentList @(
+        $mockDefinition,
+        $memberName,
+        [InvocationType]::PropertySet,
+        $Args[0]
+    )
+
+    [void]$mockDefinition._mockedProperties[$memberName].Calls.Add($callContext)
+
+    if($Strict -and $mockDefinition._mockedProperties[$memberName].Setups.Count -eq 0) {
+        $msg = "This Mock is strict and no setups were configured for setter of property $memberName"
+        throw (new-object PSMockException([ExceptionReason]::MockConsistencyCheckFailed, $msg))
+    }
 }

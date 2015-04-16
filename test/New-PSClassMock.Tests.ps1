@@ -45,7 +45,7 @@ Describe "New-PSClassMock" {
 
         $className = [Guid]::NewGuid().ToString()
         $testClass = New-PSClass $className -Inherit $parentClassName {
-            method 'foo' {}
+            method 'foo2' {}
         } -PassThru
 
         $mock = New-PSClassMock $testClass
@@ -272,6 +272,24 @@ Describe "New-PSClassMock" {
 
         $mock.Object.foo() | Should Be 1
         $mock.Object.foo() | Should Be 2
+    }
+
+    It 'Method Setup - Can mock method from base class' {
+        $baseClassName = [Guid]::NewGuid().ToString()
+        New-PSClass $baseClassName {
+            method 'testbasemethod' {}
+        }
+
+        $derivedClassName = [Guid]::NewGuid().ToString()
+        New-PSClass $derivedClassName -Inherit $baseClassName {
+
+        }
+
+        $mock = New-PSClassMock $derivedClassName
+
+        $mock.Setup('testbasemethod').Returns($true)
+
+        $mock.Object.testbasemethod() | Should Be $true
     }
 
     #endregion Method Setup
@@ -510,6 +528,23 @@ Describe "New-PSClassMock" {
         $mock.SetupProperty('foo').Returns('expectedvalue')
 
         $mock.Object.foo | Should Be 'expectedvalue'
+    }
+
+    It 'Property Setup - Can mock property from base class' {
+        $baseClassName = [Guid]::NewGuid().ToString()
+        New-PSClass $baseClassName {
+            property 'testbaseprop' { return $false } {}
+        }
+
+        $derivedClassName = [Guid]::NewGuid().ToString()
+        New-PSClass $derivedClassName -Inherit $baseClassName {
+
+        }
+
+        $mock = New-PSClassMock $derivedClassName
+        $mock.SetupProperty('testbaseprop').Returns($true)
+
+        $mock.Object.testbaseprop | Should Be $true
     }
 
     #endregion Property Setup
